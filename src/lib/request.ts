@@ -1,6 +1,12 @@
-import { ErrorResponse, LoginRequest, LoginResponse, SignupRequest, SignupResponse } from "@/types/payload";
+import {
+  ErrorResponse,
+  LoginRequest,
+  LoginResponse,
+  SignupRequest,
+  SignupResponse,
+} from "@/types/payload";
 import axios, { AxiosInstance } from "axios";
-import { getItem, setItem } from "./storage";
+import { getItem, removeItem, setItem } from "./storage";
 import { UserType } from "@/types/user";
 
 export class BackendClient {
@@ -42,7 +48,7 @@ export class BackendClient {
 
   async getUserInfo(): Promise<UserType | ErrorResponse> {
     try {
-      const accessToken = await getItem("access_token");
+      const accessToken = getItem("access_token");
       const response = await this.client.get("/auth/me", {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -51,6 +57,39 @@ export class BackendClient {
       setItem("user_data", response.data);
       return response.data;
     } catch (e) {
+      if (axios.isAxiosError(e) && e.status === 403) {
+        removeItem("access_token");
+        const refreshToken = getItem("refresh_token");
+        if (refreshToken) {
+          await this.generateNewAccessToken();
+          return this.getUserInfo();
+        }
+        return {
+          email: "",
+          username: "",
+          role: "",
+          image_url: "",
+          uid: 0,
+        };
+      }
+      return this.handlerError(e);
+    }
+  }
+
+  async generateNewAccessToken(): Promise<ErrorResponse | void> {
+    try {
+      const refreshToken = getItem("refresh_token");
+      const response = await this.client.get("/auth/generate-access-token", {
+        headers: {
+          Authorization: `Bearer ${refreshToken}`,
+        },
+      });
+      setItem("access_token", response.data.access_token);
+    } catch (e) {
+      if (axios.isAxiosError(e) && e.status === 403) {
+        removeItem("access_token");
+        removeItem("user_data");
+      }
       return this.handlerError(e);
     }
   }
@@ -68,9 +107,7 @@ export class BackendClient {
     }
   }
 
-  async login(
-    payload: LoginRequest
-  ): Promise<LoginResponse | ErrorResponse> {
+  async login(payload: LoginRequest): Promise<LoginResponse | ErrorResponse> {
     try {
       const response = await this.client.post("/auth/login", payload);
       setItem("access_token", response.data.access_token);

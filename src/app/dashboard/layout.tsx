@@ -14,7 +14,7 @@ export default function RootLayout({
   const [userData] = useUserData();
 
   useEffect(() => {
-    if(userData.uid === 0) {
+    if(userData?.uid === 0) {
       window.location.href = "/"
     }
   }, [userData]);

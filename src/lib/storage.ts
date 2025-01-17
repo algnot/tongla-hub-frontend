@@ -1,5 +1,5 @@
 
-export const setItem = async (key:string, value:string) => {
+export const setItem = (key:string, value:string) => {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
@@ -7,12 +7,20 @@ export const setItem = async (key:string, value:string) => {
   }
 };
 
-export const getItem = async (key:string) => {
+export const getItem = (key:string) => {
   try {
     const value = window.localStorage.getItem(key);
     return value != null ? JSON.parse(value) : "";
   } catch (error) {
     console.error('Error getting item:', error);
     return null;
+  }
+};
+
+export const removeItem = async (key: string) => {
+  try {
+    window.localStorage.removeItem(key);
+  } catch (error) {
+    console.error("Error removing item:", error);
   }
 };

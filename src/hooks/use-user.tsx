@@ -1,33 +1,21 @@
+"use client"
 import { useEffect, useState } from "react";
-import { getItem } from "@/lib/storage";
 import { isUserType, UserType } from "@/types/user";
 import { BackendClient } from "@/lib/request";
 
-export const useUserData = (): [UserType, () => void] => {
+export const useUserData = (): [UserType | null, () => void] => {
   const client = new BackendClient();
-  const [userData, setUserData] = useState<UserType>({
-    email: "",
-    username: "",
-    role: "",
-    phone: "",
-    image_url: "",
-    uid: 0,
-  });
+  const [userData, setUserData] = useState<UserType | null>(null);
 
   const fetchData = async () => {
-    const userDataLocal = await getItem("user_data");
-    if (!userDataLocal) {
-      const userData = await client.getUserInfo();
-      if (isUserType(userData)) {
-        setUserData(userData);
-      }
-    } else {
-      setUserData(JSON.parse(userDataLocal));
+    const userData = await client.getUserInfo();    
+    if (isUserType(userData)) {
+      setUserData(userData);
     }
   };
 
   useEffect(() => {
-    if (userData.uid == 0){
+    if(!userData) {
       fetchData();
     }
   }, [userData]);

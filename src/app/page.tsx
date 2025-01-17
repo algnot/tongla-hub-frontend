@@ -9,17 +9,23 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useUserData } from "@/hooks/use-user";
-import { useEffect } from "react";
+import { BackendClient } from "@/lib/request";
+import { FormEvent, useRef } from "react";
 
 export default function Home() {
-  const [userData] = useUserData();
+  const client = new BackendClient();
+  const formRef = useRef<HTMLFormElement | null>(null);
 
-  useEffect(() => {
-    if(userData.uid != 0) {
-      window.location.href = "/dashboard"
-    }  
-  }, [userData])
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = formRef.current;
+    const email = form?.email?.value ?? ""; 
+    const password = form?.password?.value ?? ""; 
+
+    client.login({
+      email, password
+    })
+  };
 
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
@@ -33,12 +39,13 @@ export default function Home() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form>
+              <form ref={formRef} onSubmit={handleSubmit}>
                 <div className="flex flex-col gap-6">
                   <div className="grid gap-2">
                     <Label htmlFor="email">Email</Label>
                     <Input
                       id="email"
+                      name="email"
                       type="email"
                       placeholder="m@example.com"
                       required
@@ -54,7 +61,7 @@ export default function Home() {
                         Forgot your password?
                       </a>
                     </div>
-                    <Input id="password" type="password" required />
+                    <Input id="password" name="password" type="password" required />
                   </div>
                   <Button type="submit" className="w-full">
                     Login
