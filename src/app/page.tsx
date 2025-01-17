@@ -1,3 +1,4 @@
+"use client"
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,8 +9,18 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useUserData } from "@/hooks/use-user";
+import { useEffect } from "react";
 
 export default function Home() {
+  const [userData] = useUserData();
+
+  useEffect(() => {
+    if(userData.uid != 0) {
+      window.location.href = "/dashboard"
+    }  
+  }, [userData])
+
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
