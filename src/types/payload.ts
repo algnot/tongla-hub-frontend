@@ -20,7 +20,7 @@ export interface SignupRequest {
 export interface GetUserInfoResponse {
     email: string;
     image_url: string;
-    role: "USER" | "ADMIN" | "";
+    role: "USER" | "ADMIN";
     user_id: number;
     username: string;
 }

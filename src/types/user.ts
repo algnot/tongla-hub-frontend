@@ -1,7 +1,7 @@
 export interface UserType {
   email: string;
   username: string;
-  role: string;
+  role: "USER" | "ADMIN";
   image_url: string;
   uid: number;
 }
