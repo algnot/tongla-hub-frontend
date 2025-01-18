@@ -1,6 +1,7 @@
 import { ThemeProvider } from "@/components/provider/theme-provider";
 import "./globals.css";
 import { Metadata } from "next";
+import { FullLoadingProvider } from "@/components/provider/full-loading-provider";
 
 export const metadata: Metadata = {
   title: "tongla hub admin",
@@ -16,7 +17,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          {children}
+          <FullLoadingProvider>{children}</FullLoadingProvider>
         </ThemeProvider>
       </body>
     </html>
