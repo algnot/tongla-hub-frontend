@@ -1,9 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -14,11 +20,16 @@ import {
 } from "@/components/ui/table";
 import { ErrorResponse, isErrorResponse } from "@/types/payload";
 import { useAlertContext } from "@/components/provider/alert-provider";
-import { ReactNode } from "react";
 
 interface DataTableProps<T> {
-  fetchData: (limit: number, offset: number, filter: string) => Promise<PaginatedResponse<T> | ErrorResponse>;
+  fetchData: (
+    limit: number,
+    offset: number,
+    filter: string
+  ) => Promise<PaginatedResponse<T> | ErrorResponse>;
   columns?: Array<{ key: keyof T; label: string }>;
+  href?: string;
+  navigateKey?: keyof T;
 }
 
 interface PaginatedResponse<T> {
@@ -26,7 +37,12 @@ interface PaginatedResponse<T> {
   next: number;
 }
 
-export function DataTable<T>({ fetchData, columns }: DataTableProps<T>) {
+export function DataTable<T>({
+  fetchData,
+  columns,
+  href,
+  navigateKey,
+}: DataTableProps<T>) {
   const setAlert = useAlertContext();
 
   const [datas, setDatas] = useState<T[][]>([]);
@@ -35,7 +51,12 @@ export function DataTable<T>({ fetchData, columns }: DataTableProps<T>) {
   const [nextIds, setNextIds] = useState<number[]>([]);
   const [limit, setLimit] = useState<number>(10);
 
-  const onFetchData = async (offset: number, filter: string, limit: number, reset: boolean = false) => {
+  const onFetchData = async (
+    offset: number,
+    filter: string,
+    limit: number,
+    reset: boolean = false
+  ) => {
     const response = await fetchData(limit, offset, filter);
 
     if (isErrorResponse(response)) {
@@ -43,7 +64,7 @@ export function DataTable<T>({ fetchData, columns }: DataTableProps<T>) {
       return;
     }
 
-    const { datas, next } = response as PaginatedResponse<T>;
+    const { datas, next } = response;
 
     if (reset) {
       setDatas([datas]);
@@ -83,18 +104,34 @@ export function DataTable<T>({ fetchData, columns }: DataTableProps<T>) {
     onFetchData(0, filter, newLimit, true);
   };
 
-  const columnNames = columns || Object.keys(datas[0]?.[0] || {}).map(key => ({ key, label: key }));
+  const onNavigate = (data: T) => {
+    if(href === undefined) {
+      return
+    }
+    if(navigateKey === undefined) {
+      window.location.href = `${href}`
+      return
+    }
+    window.location.href = `${href}${(data[navigateKey] ?? "") as string}`
+  }
+  const columnNames =
+    columns ||
+    Object.keys(datas[0]?.[0] || {}).map((key) => ({ key, label: key }));
 
   return (
     <div className="w-full">
       <div className="flex justify-between items-center py-4">
-        <Input 
-          placeholder="filter here" 
+        <Input
+          placeholder="filter here"
           className="max-w-sm"
           value={filter}
-          onChange={(e) => onFilter(e.target.value)} />
+          onChange={(e) => onFilter(e.target.value)}
+        />
         <div className="flex space-x-4 items-center">
-          <Select value={limit.toString()} onValueChange={(value) => onChangeLimit(Number(value))}>
+          <Select
+            value={limit.toString()}
+            onValueChange={(value) => onChangeLimit(Number(value))}
+          >
             <SelectTrigger className="max-w-xs">
               <SelectValue placeholder="Select records per page" />
             </SelectTrigger>
@@ -136,7 +173,11 @@ export function DataTable<T>({ fetchData, columns }: DataTableProps<T>) {
           <TableBody>
             {datas[page]?.length ? (
               datas[page].map((data, index) => (
-                <TableRow key={index}>
+                <TableRow
+                  key={index}
+                  className={href ? "cursor-pointer" : ""}
+                  onClick={() => onNavigate(data)}
+                >
                   {columnNames.map(({ key }) => (
                     <TableCell key={Math.random()}>
                       {data[key as keyof T] as ReactNode}
@@ -146,7 +187,10 @@ export function DataTable<T>({ fetchData, columns }: DataTableProps<T>) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columnNames.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columnNames.length}
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>
