@@ -3,6 +3,14 @@ export interface ErrorResponse {
     message: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const isErrorResponse = (data: any): data is ErrorResponse => {
+  return (
+    typeof data.status === "boolean" &&
+    typeof data.message === "string"
+  );
+};
+
 export interface SignupRequest {
     username: string;
     email: string;
