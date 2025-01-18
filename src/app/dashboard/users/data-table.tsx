@@ -1,26 +1,9 @@
 "use client";
-import {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import { ChevronDown } from "lucide-react";
 
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -29,122 +12,141 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useState } from "react";
+import { ErrorResponse, isErrorResponse } from "@/types/payload";
+import { useAlertContext } from "@/components/provider/alert-provider";
+import { ReactNode } from "react";
 
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
-  data: TData[];
+interface DataTableProps<T> {
+  fetchData: (limit: number, offset: number, filter: string) => Promise<PaginatedResponse<T> | ErrorResponse>;
+  columns?: Array<{ key: keyof T; label: string }>;
 }
 
-export function DataTable<TData, TValue>({
-  columns,
-  data,
-}: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = useState({});
+interface PaginatedResponse<T> {
+  datas: T[];
+  next: number;
+}
 
-  const table = useReactTable({
-    data,
-    columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-    },
-  });
+export function DataTable<T>({ fetchData, columns }: DataTableProps<T>) {
+  const setAlert = useAlertContext();
+
+  const [datas, setDatas] = useState<T[][]>([]);
+  const [page, setPage] = useState<number>(0);
+  const [filter, setFilter] = useState<string>("");
+  const [nextIds, setNextIds] = useState<number[]>([]);
+  const [limit, setLimit] = useState<number>(10);
+
+  const onFetchData = async (offset: number, filter: string, limit: number, reset: boolean = false) => {
+    const response = await fetchData(limit, offset, filter);
+
+    if (isErrorResponse(response)) {
+      setAlert("Error", response.message, 0, true);
+      return;
+    }
+
+    const { datas, next } = response as PaginatedResponse<T>;
+
+    if (reset) {
+      setDatas([datas]);
+      setNextIds([next]);
+      setPage(0);
+    } else {
+      setDatas((prev) => [...prev, datas]);
+      setNextIds((prev) => [...prev, next]);
+    }
+  };
+
+  useEffect(() => {
+    onFetchData(0, filter, limit, true);
+  }, [limit]);
+
+  const onNextPage = () => {
+    if (nextIds[page] === -1) return;
+
+    onFetchData(nextIds[page], filter, limit);
+    setPage((prev) => prev + 1);
+  };
+
+  const onPrevPage = () => {
+    if (page === 0) return;
+
+    setNextIds((prev) => prev.slice(0, -1));
+    setPage((prev) => Math.max(prev - 1, 0));
+  };
+
+  const onFilter = (text: string) => {
+    setFilter(text);
+    onFetchData(0, text, limit, true);
+  };
+
+  const onChangeLimit = (newLimit: number) => {
+    setLimit(newLimit);
+    onFetchData(0, filter, newLimit, true);
+  };
+
+  const columnNames = columns || Object.keys(datas[0]?.[0] || {}).map(key => ({ key, label: key }));
 
   return (
     <div className="w-full">
-      <div className="flex items-center py-4">
-        <Input
-          placeholder="Filter emails..."
-          value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("email")?.setFilterValue(event.target.value)
-          }
+      <div className="flex justify-between items-center py-4">
+        <Input 
+          placeholder="filter here" 
           className="max-w-sm"
-        />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown />
+          value={filter}
+          onChange={(e) => onFilter(e.target.value)} />
+        <div className="flex space-x-4 items-center">
+          <Select value={limit.toString()} onValueChange={(value) => onChangeLimit(Number(value))}>
+            <SelectTrigger className="max-w-xs">
+              <SelectValue placeholder="Select records per page" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="flex items-end justify-end space-x-2 py-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onPrevPage}
+              disabled={page === 0}
+            >
+              Previous
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onNextPage}
+              disabled={nextIds[page] === -1}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
       </div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
+            <TableRow>
+              {columnNames.map(({ label }) => (
+                <TableHead key={label}>{label}</TableHead>
+              ))}
+            </TableRow>
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+            {datas[page]?.length ? (
+              datas[page].map((data, index) => (
+                <TableRow key={index}>
+                  {columnNames.map(({ key }) => (
+                    <TableCell key={Math.random()}>
+                      {data[key as keyof T] as ReactNode}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
+                <TableCell colSpan={columnNames.length} className="h-24 text-center">
                   No results.
                 </TableCell>
               </TableRow>
@@ -153,24 +155,25 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
       <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
+        <div className="flex-1 text-sm text-muted-foreground">
+          Page {page + 1}: {datas[page]?.length || 0} data(s) displayed
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onPrevPage}
+          disabled={page === 0}
+        >
+          Previous
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onNextPage}
+          disabled={nextIds[page] === -1}
+        >
+          Next
+        </Button>
       </div>
     </div>
   );

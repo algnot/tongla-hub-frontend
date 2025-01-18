@@ -1,3 +1,5 @@
+import { UserType } from "./user";
+
 export interface ErrorResponse {
     status: boolean;
     message: string;
@@ -48,4 +50,9 @@ export interface LoginResponse {
     role: "USER" | "ADMIN" | "";
     user_id: number;
     username: string;
+}
+
+export interface GetUserResponse {
+    next: number;
+    datas: UserType[];
 }
