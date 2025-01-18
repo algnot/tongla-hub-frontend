@@ -3,7 +3,9 @@ import {
   GetUserResponse,
   LoginRequest,
   LoginResponse,
+  SignUpRequest,
   SignupRequest,
+  SignUpResponse,
   SignupResponse,
 } from "@/types/payload";
 import axios, { AxiosInstance } from "axios";
@@ -99,6 +101,18 @@ export class BackendClient {
       const response = await client.post("/auth/sign-up", payload);
       setItem("access_token", response.data.access_token);
       setItem("refresh_token", response.data.refresh_token);
+      return response.data;
+    } catch (e) {
+      return handlerError(e);
+    }
+  }
+
+  async signUp(payload: SignUpRequest): Promise<SignUpResponse | ErrorResponse> {
+    try {
+      const response = await client.post("/auth/sign-up", payload);
+      setItem("access_token", response.data.access_token);
+      setItem("refresh_token", response.data.refresh_token);
+      await this.getUserInfo();
       return response.data;
     } catch (e) {
       return handlerError(e);

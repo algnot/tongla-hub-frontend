@@ -10,5 +10,5 @@ export function logout() {
   removeItem("access_token");
   removeItem("refresh_token");
   removeItem("user_data");
-  window.location.href = "/"
+  window.location.href = "/login"
 }

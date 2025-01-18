@@ -2,13 +2,7 @@
 import { useAlertContext } from "@/components/provider/alert-provider";
 import { useFullLoadingContext } from "@/components/provider/full-loading-provider";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BackendClient } from "@/lib/request";
@@ -16,7 +10,7 @@ import { isErrorResponse } from "@/types/payload";
 import Link from "next/link";
 import { FormEvent, useRef } from "react";
 
-export default function Login() {
+export default function SignUp() {
   const setAlert = useAlertContext();
   const setFullLoading = useFullLoadingContext();
   const client = new BackendClient();
@@ -24,12 +18,19 @@ export default function Login() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setFullLoading(true);
     const form = formRef.current;
     const email = form?.email?.value ?? "";
+    const username = form?.username?.value ?? "";
     const password = form?.password?.value ?? "";
+    const confirmPassword = form?.confirmPassword?.value ?? "";
 
-    const response = await client.login({
+    if (password != confirmPassword) {
+      setAlert("Error", "password and confirm password not match", 0, true);
+      return;
+    }
+    setFullLoading(true);
+    const response = await client.signUp({
+      username,
       email,
       password,
     });
@@ -41,8 +42,8 @@ export default function Login() {
     }
 
     setAlert(
-      "Login Complete",
-      `Welcome back ${response.username} :)`,
+      "Sign up Complete",
+      `Welcome ${response.username} :)`,
       () => {
         window.location.href = "/dashboard";
       },
@@ -56,10 +57,7 @@ export default function Login() {
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">Login</CardTitle>
-              <CardDescription>
-                Enter your email below to login to your account
-              </CardDescription>
+              <CardTitle className="text-2xl">Sign up</CardTitle>
             </CardHeader>
             <CardContent>
               <form ref={formRef} onSubmit={handleSubmit}>
@@ -75,6 +73,15 @@ export default function Login() {
                     />
                   </div>
                   <div className="grid gap-2">
+                    <Label htmlFor="username">Username</Label>
+                    <Input
+                      id="username"
+                      name="username"
+                      placeholder="tongla"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
                     <div className="flex items-center">
                       <Label htmlFor="password">Password</Label>
                     </div>
@@ -85,20 +92,25 @@ export default function Login() {
                       required
                     />
                   </div>
+                  <div className="grid gap-2">
+                    <div className="flex items-center">
+                      <Label htmlFor="confirmPassword">Confirm password</Label>
+                    </div>
+                    <Input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      required
+                    />
+                  </div>
                   <Button type="submit" className="w-full">
-                    Login
+                    Sign up
                   </Button>
-                  <Link
-                    href="/forgot-password"
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                  >
-                    Forgot your password?
-                  </Link>
                 </div>
                 <div className="mt-6 text-center text-sm">
-                  Don&apos;t have an account?{" "}
-                  <Link href="/sign-up" className="underline underline-offset-4">
-                    Sign up
+                  I have an account{" "}
+                  <Link href="/login" className="underline underline-offset-4">
+                    Login
                   </Link>
                 </div>
               </form>

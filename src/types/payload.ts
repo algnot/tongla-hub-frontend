@@ -37,6 +37,22 @@ export interface SignupResponse {
     username: string;
 }
 
+export interface SignUpRequest {
+    username: string;
+    email: string;
+    password: string;
+}
+
+export interface SignUpResponse {
+    access_token: string;
+    email: string;
+    image_url: string;
+    refresh_token: string;
+    role: "USER" | "ADMIN";
+    user_id: number;
+    username: string;
+}
+
 export interface LoginRequest {
     email: string;
     password: string;
@@ -47,7 +63,7 @@ export interface LoginResponse {
     email: string;
     image_url: string;
     refresh_token: string;
-    role: "USER" | "ADMIN" | "";
+    role: "USER" | "ADMIN";
     user_id: number;
     username: string;
 }
