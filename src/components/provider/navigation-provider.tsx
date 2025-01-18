@@ -16,6 +16,7 @@ import {
 } from "../ui/breadcrumb";
 import { SidebarTrigger } from "../ui/sidebar";
 import { Separator } from "@radix-ui/react-separator";
+import { ModeToggle } from "../ui/switch-themes";
 
 interface NavigationItem {
   name: string;
@@ -84,6 +85,9 @@ export default function NavigationProvider({
             )}
           </BreadcrumbList>
         </Breadcrumb>
+        <div className="ml-auto">
+          <ModeToggle />
+        </div>
       </header>
       {children}
     </NavigationContext.Provider>
