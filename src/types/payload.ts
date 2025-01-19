@@ -13,26 +13,10 @@ export const isErrorResponse = (data: any): data is ErrorResponse => {
   );
 };
 
-export interface SignupRequest {
-    username: string;
-    email: string;
-    password: string;
-}
-
 export interface GetUserInfoResponse {
     email: string;
     image_url: string;
     role: "USER" | "ADMIN";
-    user_id: number;
-    username: string;
-}
-
-export interface SignupResponse {
-    access_token: string;
-    email: string;
-    image_url: string;
-    refresh_token: string;
-    role: "USER" | "ADMIN" | "";
     user_id: number;
     username: string;
 }
@@ -69,11 +53,26 @@ export interface LoginResponse {
 }
 
 export interface ResetPasswordGetOtpResponse {
-    email: string,
-    expires_at: string,
-    mapper_key: string,
-    mapper_value: string,
-    ref: string
+    email: string;
+    expires_at: string;
+    mapper_key: string;
+    mapper_value: string;
+    ref: string;
+}
+
+export interface ResetPasswordGetTokenRequest {
+    email: string;
+    code: string;
+    ref: string;
+}
+
+export interface ResetPasswordGetTokenResponse {
+    token: string;
+}
+
+export interface ResetPasswordResponse {
+    access_token: string;
+    refresh_token: string;
 }
 
 export interface GetUserResponse {

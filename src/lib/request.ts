@@ -6,10 +6,10 @@ import {
   LoginRequest,
   LoginResponse,
   ResetPasswordGetOtpResponse,
+  ResetPasswordGetTokenRequest,
+  ResetPasswordGetTokenResponse,
   SignUpRequest,
-  SignupRequest,
   SignUpResponse,
-  SignupResponse,
 } from "@/types/payload";
 import axios, { AxiosInstance } from "axios";
 import { getItem, removeItem, setItem } from "./storage";
@@ -97,18 +97,6 @@ export class BackendClient {
     }
   }
 
-  async signup(
-    payload: SignupRequest
-  ): Promise<SignupResponse | ErrorResponse> {
-    try {
-      const response = await client.post("/auth/sign-up", payload);
-      setItem("access_token", response.data.access_token);
-      setItem("refresh_token", response.data.refresh_token);
-      return response.data;
-    } catch (e) {
-      return handlerError(e);
-    }
-  }
 
   async signUp(payload: SignUpRequest): Promise<SignUpResponse | ErrorResponse> {
     try {
@@ -140,6 +128,32 @@ export class BackendClient {
         email
       });
       return response.data;
+    } catch (e) {
+      return handlerError(e);
+    }
+  }
+
+  async resetPasswordGetToken(payload: ResetPasswordGetTokenRequest): Promise<ResetPasswordGetTokenResponse | ErrorResponse> {
+    try {
+      const response = await client.post("/auth/reset-password-token", payload);
+      return response.data;
+    } catch (e) {
+      return handlerError(e);
+    }
+  }
+
+  async resetPassword(password: string, token: string): Promise<UserType | ErrorResponse> {
+    try {
+      const response = await client.post("/auth/reset-password", {
+        password
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setItem("access_token", response.data.access_token);
+      setItem("refresh_token", response.data.refresh_token);
+      return await this.getUserInfo();
     } catch (e) {
       return handlerError(e);
     }
