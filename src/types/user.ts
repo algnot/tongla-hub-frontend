@@ -28,3 +28,29 @@ export interface ExecuteCodeResponse {
   runtime: number;
   runtime_unit: string;
 }
+
+export interface TestCase {
+  expected: string;
+  expected_run_time_ms: number;
+  id: number;
+  input: string;
+}
+
+export interface Owner {
+  username: string;
+}
+
+export interface Question {
+  commented: number;
+  created_at: string;
+  description: string;
+  id: number;
+  is_public: boolean;
+  is_system_question: boolean;
+  owner: Owner;
+  rate: number;
+  start_code: string;
+  submitted: number;
+  test_cases: TestCase[];
+  title: string;
+}

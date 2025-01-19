@@ -14,7 +14,7 @@ import {
 } from "@/types/payload";
 import axios, { AxiosInstance } from "axios";
 import { getItem, removeItem, setItem } from "./storage";
-import { ExecuteCodeRequest, ExecuteCodeResponse, UserType } from "@/types/user";
+import { ExecuteCodeRequest, ExecuteCodeResponse, Question, UserType } from "@/types/user";
 
 const handlerError = (error: unknown): ErrorResponse => {
   if (axios.isAxiosError(error)) {
@@ -251,6 +251,15 @@ export class BackendClient {
   async executeCode(payload: ExecuteCodeRequest): Promise<ExecuteCodeResponse | ErrorResponse> {
     try {
       const response = await client.post("/code/execute", payload);
+      return response.data;
+    } catch (e) {
+      return handlerError(e);
+    }
+  }
+
+  async getQuestionById(id: string): Promise<Question | ErrorResponse> {
+    try {
+      const response = await client.get(`/code/get-question-by-id?id=${id}`);
       return response.data;
     } catch (e) {
       return handlerError(e);
