@@ -52,7 +52,7 @@ const TestCaseComponent = ({ testCases, loading }: TestCaseComponentProps) => {
             <div className="flex justify-between items-center">
               <span className={`text-md ${!isPassed && testCase.actualOutput ? "text-red-600" : ""}`}>Test Case {index + 1}</span>
               <span className={`text-sm ${isPassed ? "text-green-600" : "text-red-600"}`}>
-                Score: {isPassed ? "1" : "0"}/1
+                {!isPassed ? "incorrect" : "correct"}/1
               </span>
             </div>
 
