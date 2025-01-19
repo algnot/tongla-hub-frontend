@@ -2,6 +2,7 @@ import {
   ErrorResponse,
   GetEmailSenderResponse,
   GetOneTimePasswordResponse,
+  GetQuestionResponse,
   GetUserResponse,
   LoginRequest,
   LoginResponse,
@@ -219,6 +220,28 @@ export class BackendClient {
         if (refreshToken) {
           await this.generateNewAccessToken();
           return this.getOneTimePassword(limit, offset, text);
+        }
+      }
+      return handlerError(e);
+    }
+  }
+
+  async getQuestion(limit: number, offset: number | "", text: string): Promise<GetQuestionResponse | ErrorResponse> {
+    try {
+      const accessToken = getItem("access_token");
+      const response = await client.get(`/data/list?limit=${limit}&offset=${offset}&text=${text}&model=question`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      return response.data;
+    } catch (e) {      
+      if (axios.isAxiosError(e) && e.status === 403) {
+        removeItem("access_token");
+        const refreshToken = getItem("refresh_token");
+        if (refreshToken) {
+          await this.generateNewAccessToken();
+          return this.getQuestion(limit, offset, text);
         }
       }
       return handlerError(e);

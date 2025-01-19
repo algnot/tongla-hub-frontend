@@ -115,3 +115,19 @@ export interface GetOneTimePasswordResponse {
     next: number;
     datas: OneTimePassword[];
 }
+
+export interface GetQuestion {
+    commented: number,
+    created_at: string,
+    id: number,
+    is_public: boolean,
+    is_system_question: boolean,
+    rate: number,
+    submitted: number,
+    title: string
+}
+
+export interface GetQuestionResponse {
+    next: number;
+    datas: GetQuestion[];
+}

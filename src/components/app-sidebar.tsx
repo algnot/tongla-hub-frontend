@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { SquareTerminal, User2 } from "lucide-react";
+import { Code2, SquareTerminal, User2 } from "lucide-react";
 
 import { NavMain } from "@/components/navbar/nav-main";
 import { NavUser } from "@/components/navbar/nav-user";
@@ -22,6 +22,18 @@ const navUser = [
       {
         title: "Playground",
         url: "/dashboard/",
+      }
+    ],
+  },
+  {
+    title: "Problems",
+    url: "#",
+    icon: Code2,
+    isActive: true,
+    items: [
+      {
+        title: "All Problems",
+        url: "/dashboard/problems",
       }
     ],
   },

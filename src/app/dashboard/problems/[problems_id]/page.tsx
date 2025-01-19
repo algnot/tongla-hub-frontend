@@ -45,7 +45,10 @@ export default function Page() {
   useEffect(() => {
     setCode(`# Write your Python code here\n\nprint('Hello ${userData?.username ?? "World"}!')\n`);
     setStdout(`PyDev console: starting.\n\nHello ${userData?.username ?? "World"}!`);
-    setNavigation([], "Playground");    
+    setNavigation([{
+        "name": "All Problems",
+        "path": "/dashboard/problems"
+    }], "Playground");    
   }, [setNavigation, userData]);
 
   return (
@@ -54,7 +57,7 @@ export default function Page() {
         <div className="border rounded-lg p-4">
           <div className="flex justify-between mb-4">
             <div>
-              <Button>Code Editor</Button>
+              <Button>Editor</Button>
             </div>
           </div>
           <CodeEditor value={code} onChange={(newCode) => setCode(newCode)} />
@@ -73,7 +76,7 @@ export default function Page() {
             />
             <div className="flex justify-end mt-4">
               <Button onClick={handleRun} disabled={loading}> 
-                {loading ? 'Running...' : 'Run'}
+                {loading ? 'Running...' : 'Run Test'}
               </Button>
             </div>
           </div>
