@@ -55,7 +55,7 @@ export default function NavigationProvider({
           <BreadcrumbList>
             <BreadcrumbItem className="hidden md:block">
               <BreadcrumbLink href="/dashboard">
-                Tongla Hub Admin
+                Tongla Coding
               </BreadcrumbLink>
             </BreadcrumbItem>
 
