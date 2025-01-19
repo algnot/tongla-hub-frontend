@@ -21,7 +21,7 @@ const navUser = [
     items: [
       {
         title: "Playground",
-        url: "#",
+        url: "/dashboard/",
       }
     ],
   },
