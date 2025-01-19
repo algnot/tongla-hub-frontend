@@ -72,3 +72,39 @@ export interface GetUserResponse {
     next: number;
     datas: UserType[];
 }
+
+export interface EmailSender {
+    id: number;
+    reason: string;
+    send_at: string;
+    status: number;
+    template_id: string;
+    to_email: string;
+}
+
+export interface GetEmailSenderResponse {
+    next: number;
+    datas: EmailSender[];
+}
+
+export interface EmailSender {
+    id: number;
+    reason: string;
+    send_at: string;
+    status: number;
+    template_id: string;
+    to_email: string;
+}
+
+export interface OneTimePassword {
+    id: number;
+    code: string;
+    ref: string;
+    used: boolean;
+    expires_at: string;
+}
+
+export interface GetOneTimePasswordResponse {
+    next: number;
+    datas: OneTimePassword[];
+}

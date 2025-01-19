@@ -2,7 +2,7 @@
 import { useLoadingContext } from "@/components/provider/loading-provider";
 import { useNavigateContext } from "@/components/provider/navigation-provider";
 import { useEffect } from "react";
-import { DataTable } from "../../../components/data-table";
+import { DataTable } from "@/components/data-table";
 import { BackendClient } from "@/lib/request";
 
 export default function Page() {
@@ -25,7 +25,7 @@ export default function Page() {
           { key: "username", label: "Name" },
           { key: "role", label: "Role" },
         ]}
-        href="/dashboard/users/"
+        href="/dashboard/admin/users/"
         navigateKey="uid"
       />
     </div>

@@ -48,7 +48,23 @@ const navAdmin = [
     items: [
       {
         title: "Users",
-        url: "/dashboard/users",
+        url: "/dashboard/admin/users",
+      }
+    ],
+  },
+  {
+    title: "System",
+    url: "/dashboard/users",
+    icon: SquareTerminal,
+    isActive: false,
+    items: [
+      {
+        title: "Email",
+        url: "/dashboard/admin/email",
+      },
+      {
+        title: "One Time Password",
+        url: "/dashboard/admin/one-time-password",
       }
     ],
   },

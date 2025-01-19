@@ -24,7 +24,7 @@ import { useAlertContext } from "@/components/provider/alert-provider";
 interface DataTableProps<T> {
   fetchData: (
     limit: number,
-    offset: number,
+    offset: number | "",
     filter: string
   ) => Promise<PaginatedResponse<T> | ErrorResponse>;
   columns?: Array<{ key: keyof T; label: string }>;
@@ -44,7 +44,6 @@ export function DataTable<T>({
   navigateKey,
 }: DataTableProps<T>) {
   const setAlert = useAlertContext();
-
   const [datas, setDatas] = useState<T[][]>([]);
   const [page, setPage] = useState<number>(0);
   const [filter, setFilter] = useState<string>("");
@@ -52,7 +51,7 @@ export function DataTable<T>({
   const [limit, setLimit] = useState<number>(10);
 
   const onFetchData = async (
-    offset: number,
+    offset: number | "",
     filter: string,
     limit: number,
     reset: boolean = false
@@ -77,7 +76,7 @@ export function DataTable<T>({
   };
 
   useEffect(() => {
-    onFetchData(0, filter, limit, true);
+    onFetchData("", filter, limit, true);
   }, [limit]);
 
   const onNextPage = () => {
@@ -96,12 +95,12 @@ export function DataTable<T>({
 
   const onFilter = (text: string) => {
     setFilter(text);
-    onFetchData(0, text, limit, true);
+    onFetchData("", text, limit, true);
   };
 
   const onChangeLimit = (newLimit: number) => {
     setLimit(newLimit);
-    onFetchData(0, filter, newLimit, true);
+    onFetchData("", filter, newLimit, true);
   };
 
   const onNavigate = (data: T) => {
@@ -180,7 +179,15 @@ export function DataTable<T>({
                 >
                   {columnNames.map(({ key }) => (
                     <TableCell key={Math.random()}>
-                      {data[key as keyof T] as ReactNode}
+                      {typeof data[key as keyof T] === "boolean" ? (
+                        data[key as keyof T] ? (
+                          <span className="icon-true">✅</span>
+                        ) : (
+                          <span className="icon-false">❌</span> 
+                        )
+                      ) : (
+                        data[key as keyof T] as ReactNode
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>

@@ -1,5 +1,7 @@
 import {
   ErrorResponse,
+  GetEmailSenderResponse,
+  GetOneTimePasswordResponse,
   GetUserResponse,
   LoginRequest,
   LoginResponse,
@@ -131,10 +133,10 @@ export class BackendClient {
     }
   }
 
-  async getUser(limit: number, offset: number, text: string): Promise<GetUserResponse | ErrorResponse> {
+  async getUser(limit: number, offset: number | "", text: string): Promise<GetUserResponse | ErrorResponse> {
     try {
       const accessToken = getItem("access_token");
-      const response = await client.get(`/users/get-users?limit=${limit}&offset=${offset}&text=${text}`, {
+      const response = await client.get(`/data/list?limit=${limit}&offset=${offset}&text=${text}&model=user`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -147,6 +149,50 @@ export class BackendClient {
         if (refreshToken) {
           await this.generateNewAccessToken();
           return this.getUser(limit, offset, text);
+        }
+      }
+      return handlerError(e);
+    }
+  }
+
+  async getEmailSender(limit: number, offset: number | "", text: string): Promise<GetEmailSenderResponse | ErrorResponse> {
+    try {
+      const accessToken = getItem("access_token");
+      const response = await client.get(`/data/list?limit=${limit}&offset=${offset}&text=${text}&model=email`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      return response.data;
+    } catch (e) {      
+      if (axios.isAxiosError(e) && e.status === 403) {
+        removeItem("access_token");
+        const refreshToken = getItem("refresh_token");
+        if (refreshToken) {
+          await this.generateNewAccessToken();
+          return this.getEmailSender(limit, offset, text);
+        }
+      }
+      return handlerError(e);
+    }
+  }
+
+  async getOneTimePassword(limit: number, offset: number | "", text: string): Promise<GetOneTimePasswordResponse | ErrorResponse> {
+    try {
+      const accessToken = getItem("access_token");
+      const response = await client.get(`/data/list?limit=${limit}&offset=${offset}&text=${text}&model=otp`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      return response.data;
+    } catch (e) {      
+      if (axios.isAxiosError(e) && e.status === 403) {
+        removeItem("access_token");
+        const refreshToken = getItem("refresh_token");
+        if (refreshToken) {
+          await this.generateNewAccessToken();
+          return this.getOneTimePassword(limit, offset, text);
         }
       }
       return handlerError(e);
