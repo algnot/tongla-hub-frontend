@@ -45,10 +45,15 @@ const TestCaseComponent = ({ testCases, loading }: TestCaseComponentProps) => {
   return (
     <div className="max-h-[650px] overflow-y-scroll">
       {testCases.map((testCase, index) => {
+        const isPassed = testCase.actualOutput === testCase.expectedOutput;
+
         return (
           <div key={index} className="border rounded-md p-3 mb-4">
             <div className="flex justify-between items-center">
-              <span className={`text-md ${!testCase.passed && testCase.actualOutput ? "text-red-600" : ""}`}>Test Case {index + 1}</span>
+              <span className={`text-md ${!isPassed && testCase.actualOutput ? "text-red-600" : ""}`}>Test Case {index + 1}</span>
+              <span className={`text-sm ${isPassed ? "text-green-600" : "text-red-600"}`}>
+                Score: {isPassed ? "1" : "0"}/1
+              </span>
             </div>
 
             <div
