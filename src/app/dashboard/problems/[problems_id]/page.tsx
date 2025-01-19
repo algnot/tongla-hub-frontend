@@ -11,7 +11,13 @@ import { isErrorResponse } from "@/types/payload";
 import { Question } from "@/types/user";
 import { useEffect, useState } from "react";
 
-export default function Page({ params }: { params: { problems_id: string } }) {
+type PageProps = {
+  params: {
+    problems_id: string;
+  };
+};
+
+export default function Page({ params }: PageProps) {
   const client = new BackendClient();
   const setAlert = useAlertContext();
   const setNavigation = useNavigateContext();
