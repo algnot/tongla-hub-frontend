@@ -12,7 +12,7 @@ import { Question } from "@/types/user";
 import { useEffect, useState } from "react";
 
 type PageProps = {
-  params: Promise<{ problems_id: string[] }>
+  params: Promise<{ problems_id: string[] }>;
 };
 
 export default function Page({ params }: PageProps) {
@@ -56,7 +56,7 @@ export default function Page({ params }: PageProps) {
   };
 
   const fetchQuestionData = async () => {
-    const {problems_id} = (await params)
+    const { problems_id } = await params;
     const problemId = Array.isArray(problems_id) ? problems_id[0] : problems_id;
 
     const response = await client.getQuestionById(problemId);
@@ -69,12 +69,15 @@ export default function Page({ params }: PageProps) {
     const testCases = response.test_cases.slice(0, 3);
     let testCaseList: TestCaseProps[] = [];
     for (const testCase of testCases) {
-      testCaseList = [...testCaseList, {
-        input: testCase.input,
-        expectedOutput: testCase.expected
-      }]
+      testCaseList = [
+        ...testCaseList,
+        {
+          input: testCase.input,
+          expectedOutput: testCase.expected,
+        },
+      ];
     }
-    setTestCases(testCaseList)
+    setTestCases(testCaseList);
     setCode(response.start_code.replace(/\\n/g, "\n"));
     setQuestionData(response);
     setStdin(response.test_cases[0].input);
@@ -114,17 +117,15 @@ export default function Page({ params }: PageProps) {
       if (runtime > questionDataTestCase.expected_run_time_ms) {
         output = `Run time not pass\nExpected: ${questionDataTestCase.expected_run_time_ms}ms\nUsed: ${runtime}ms`;
       }
-      if (output != expected) {
-        result = [
-          ...result,
-          {
-            input: questionDataTestCase.input,
-            expectedOutput: expected,
-            actualOutput: output,
-            passed: questionDataTestCase.expected == output,
-          },
-        ];
-      }
+      result = [
+        ...result,
+        {
+          input: questionDataTestCase.input,
+          expectedOutput: expected,
+          actualOutput: output,
+          passed: questionDataTestCase.expected == output,
+        },
+      ];
     }
     setTestCases(result);
     setLoading(false);
