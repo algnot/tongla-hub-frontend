@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { Settings2, SquareTerminal, User2 } from "lucide-react";
+import { SquareTerminal, User2 } from "lucide-react";
 
 import { NavMain } from "@/components/navbar/nav-main";
 import { NavUser } from "@/components/navbar/nav-user";
@@ -25,18 +25,18 @@ const navUser = [
       }
     ],
   },
-  {
-    title: "Settings",
-    url: "#",
-    icon: Settings2,
-    isActive: true,
-    items: [
-      {
-        title: "General",
-        url: "#",
-      }
-    ],
-  },
+  // {
+  //   title: "Settings",
+  //   url: "#",
+  //   icon: Settings2,
+  //   isActive: true,
+  //   items: [
+  //     {
+  //       title: "General",
+  //       url: "#",
+  //     }
+  //   ],
+  // },
 ];
 
 const navAdmin = [
