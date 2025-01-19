@@ -12,9 +12,7 @@ import { Question } from "@/types/user";
 import { useEffect, useState } from "react";
 
 type PageProps = {
-  params: {
-    problems_id: string;
-  };
+  params: Promise<{ problems_id: string[] }>
 };
 
 export default function Page({ params }: PageProps) {
@@ -58,7 +56,10 @@ export default function Page({ params }: PageProps) {
   };
 
   const fetchQuestionData = async () => {
-    const response = await client.getQuestionById(params.problems_id);
+    const {problems_id} = (await params)
+    const problemId = Array.isArray(problems_id) ? problems_id[0] : problems_id;
+
+    const response = await client.getQuestionById(problemId);
     if (isErrorResponse(response)) {
       setAlert("Error", response.message, 0, true);
       setLoading(false);
