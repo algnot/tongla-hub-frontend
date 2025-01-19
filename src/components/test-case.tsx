@@ -10,21 +10,24 @@ export type TestCaseProps = {
 
 type TestCaseComponentProps = {
   testCases: TestCaseProps[];
-  loading: boolean; 
+  loading: boolean;
 };
 
 const TestCaseComponent = ({ testCases, loading }: TestCaseComponentProps) => {
   const [openSections, setOpenSections] = useState<{
     input: number[];
     output: number[];
-    actual: number[];  
+    actual: number[];
   }>({
     input: [],
     output: [],
     actual: [],
   });
 
-  const toggleSection = (index: number, section: "input" | "output" | "actual") => {
+  const toggleSection = (
+    index: number,
+    section: "input" | "output" | "actual"
+  ) => {
     setOpenSections((prevSections) => ({
       ...prevSections,
       [section]: prevSections[section].includes(index)
@@ -50,9 +53,13 @@ const TestCaseComponent = ({ testCases, loading }: TestCaseComponentProps) => {
         return (
           <div key={index} className="border rounded-md p-3 mb-4">
             <div className="flex justify-between items-center">
-              <span className={`text-md ${!isPassed && testCase.actualOutput ? "text-red-600" : ""}`}>Test Case {index + 1}</span>
-              <span className={`text-sm ${isPassed ? "text-green-600" : "text-red-600"}`}>
-                {!isPassed ? "incorrect" : "correct"}/1
+              <span className="text-md">Test Case {index + 1}</span>
+              <span
+                className={`text-sm ${
+                  isPassed ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                {!isPassed ? "incorrect" : "correct"}
               </span>
             </div>
 
