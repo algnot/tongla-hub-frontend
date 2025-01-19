@@ -5,6 +5,7 @@ import {
   GetUserResponse,
   LoginRequest,
   LoginResponse,
+  ResetPasswordGetOtpResponse,
   SignUpRequest,
   SignupRequest,
   SignUpResponse,
@@ -127,6 +128,17 @@ export class BackendClient {
       setItem("access_token", response.data.access_token);
       setItem("refresh_token", response.data.refresh_token);
       await this.getUserInfo();
+      return response.data;
+    } catch (e) {
+      return handlerError(e);
+    }
+  }
+
+  async resetPasswordGetOtp(email: string): Promise<ResetPasswordGetOtpResponse | ErrorResponse> {
+    try {
+      const response = await client.post("/auth/reset-password-otp", {
+        email
+      });
       return response.data;
     } catch (e) {
       return handlerError(e);

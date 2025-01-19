@@ -68,6 +68,14 @@ export interface LoginResponse {
     username: string;
 }
 
+export interface ResetPasswordGetOtpResponse {
+    email: string,
+    expires_at: string,
+    mapper_key: string,
+    mapper_value: string,
+    ref: string
+}
+
 export interface GetUserResponse {
     next: number;
     datas: UserType[];
