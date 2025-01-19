@@ -13,7 +13,7 @@ import {
 } from "@/types/payload";
 import axios, { AxiosInstance } from "axios";
 import { getItem, removeItem, setItem } from "./storage";
-import { UserType } from "@/types/user";
+import { ExecuteCodeRequest, ExecuteCodeResponse, UserType } from "@/types/user";
 
 const handlerError = (error: unknown): ErrorResponse => {
   if (axios.isAxiosError(error)) {
@@ -221,6 +221,15 @@ export class BackendClient {
           return this.getOneTimePassword(limit, offset, text);
         }
       }
+      return handlerError(e);
+    }
+  }
+
+  async executeCode(payload: ExecuteCodeRequest): Promise<ExecuteCodeResponse | ErrorResponse> {
+    try {
+      const response = await client.post("/code/execute", payload);
+      return response.data;
+    } catch (e) {
       return handlerError(e);
     }
   }

@@ -16,3 +16,15 @@ export const isUserType = (data: any): data is UserType => {
     typeof data.uid === "number"
   );
 };
+
+export interface ExecuteCodeRequest {
+  stdin: string;
+  code: string;
+}
+
+export interface ExecuteCodeResponse {
+  stdout: string;
+  stderr: string;
+  runtime: number;
+  runtime_unit: string;
+}
