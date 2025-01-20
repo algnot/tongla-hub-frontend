@@ -14,7 +14,7 @@ import {
 } from "@/types/payload";
 import axios, { AxiosInstance } from "axios";
 import { getItem, removeItem, setItem } from "./storage";
-import { ExecuteCodeRequest, ExecuteCodeResponse, Question, UserType } from "@/types/user";
+import { ExecuteCodeRequest, ExecuteCodeResponse, Question, UserType } from "@/types/request";
 
 const handlerError = (error: unknown): ErrorResponse => {
   if (axios.isAxiosError(error)) {

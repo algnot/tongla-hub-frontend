@@ -8,7 +8,7 @@ import TestCaseComponent, { TestCaseProps } from "@/components/test-case";
 import { Button } from "@/components/ui/button";
 import { BackendClient } from "@/lib/request";
 import { isErrorResponse } from "@/types/payload";
-import { Question } from "@/types/user";
+import { Question } from "@/types/request";
 import { useEffect, useState } from "react";
 
 type PageProps = {
@@ -20,16 +20,53 @@ export default function Page({ params }: PageProps) {
   const setAlert = useAlertContext();
   const setNavigation = useNavigateContext();
   const [questionData, setQuestionData] = useState<Question | null>(null);
+  const [testCase, setTestCase] = useState<TestCaseProps[]>([]);
 
   const [code, setCode] = useState<string>("");
   const [stdin, setStdin] = useState<string>("");
   const [stdout, setStdout] = useState<string>("PyDev console: starting");
-  const [testCases, setTestCases] = useState<TestCaseProps[]>([]);
 
   const [loading, setLoading] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<
     "detail" | "customInput" | "testCase"
   >("detail");
+
+  const fetchQuestionData = async () => {
+    const { problems_id } = await params;
+    const problemId = Array.isArray(problems_id) ? problems_id[0] : problems_id;
+
+    const response = await client.getQuestionById(problemId);
+    if (isErrorResponse(response)) {
+      setAlert("Error", response.message, 0, true);
+      setLoading(false);
+      return;
+    }
+
+    let testCaseList: TestCaseProps[] = [];
+    let count = 1;
+    for (const testCase of response.test_cases.slice(0, 3)) {
+      testCaseList = [
+        ...testCaseList,
+        {
+          expected: testCase,
+          test_name: `Case ${count++}`,
+        },
+      ];
+    }
+    setTestCase(testCaseList);
+    setCode(response.start_code.replace(/\\n/g, "\n"));
+    setQuestionData(response);
+    setStdin(response.test_cases[0].input);
+    setNavigation(
+      [
+        {
+          name: "All Problems",
+          path: "/dashboard/problems",
+        },
+      ],
+      response.title
+    );
+  };
 
   const handleRun = async () => {
     setLoading(true);
@@ -55,54 +92,18 @@ export default function Page({ params }: PageProps) {
     setLoading(false);
   };
 
-  const fetchQuestionData = async () => {
-    const { problems_id } = await params;
-    const problemId = Array.isArray(problems_id) ? problems_id[0] : problems_id;
-
-    const response = await client.getQuestionById(problemId);
-    if (isErrorResponse(response)) {
-      setAlert("Error", response.message, 0, true);
-      setLoading(false);
-      return;
-    }
-
-    const testCases = response.test_cases.slice(0, 3);
-    let testCaseList: TestCaseProps[] = [];
-    for (const testCase of testCases) {
-      testCaseList = [
-        ...testCaseList,
-        {
-          input: testCase.input,
-          expectedOutput: testCase.expected,
-        },
-      ];
-    }
-    setTestCases(testCaseList);
-    setCode(response.start_code.replace(/\\n/g, "\n"));
-    setQuestionData(response);
-    setStdin(response.test_cases[0].input);
-    setNavigation(
-      [
-        {
-          name: "All Problems",
-          path: "/dashboard/problems",
-        },
-      ],
-      response.title
-    );
-  };
-
   const handleRunAllTestCase = async () => {
-    const questionDataTestCases = questionData?.test_cases?.slice(0, 3);
+    const testCases = questionData?.test_cases?.slice(0, 3);
     setLoading(true);
 
-    if (!questionDataTestCases) return;
-    let result: TestCaseProps[] = [];
+    if (!testCases) return;
 
-    for (const questionDataTestCase of questionDataTestCases) {
+    let result: TestCaseProps[] = [];
+    let count = 1;
+    for (const testCase of testCases) {
       const response = await client.executeCode({
         code,
-        stdin: questionDataTestCase.input,
+        stdin: testCase.input,
       });
 
       if (isErrorResponse(response)) {
@@ -112,22 +113,22 @@ export default function Page({ params }: PageProps) {
       }
 
       let output = response.stdout != "" ? response.stdout : response.stderr;
-      const expected = questionDataTestCase.expected;
-      const runtime = response.runtime;
-      if (runtime > questionDataTestCase.expected_run_time_ms) {
-        output = `Run time not pass\nExpected: ${questionDataTestCase.expected_run_time_ms}ms\nUsed: ${runtime}ms`;
+      if (response.runtime > testCase.expected_run_time_ms) {
+        output = `Run time not pass\nExpected: ${testCase.expected_run_time_ms}ms\nUsed: ${response.runtime}ms`;
       }
       result = [
         ...result,
         {
-          input: questionDataTestCase.input,
-          expectedOutput: expected,
-          actualOutput: output,
-          passed: questionDataTestCase.expected == output,
+          expected: testCase,
+          test_name: `Case ${count++}`,
+          output: {
+            output: output,
+            run_time_ms: response.runtime
+          }
         },
       ];
     }
-    setTestCases(result);
+    setTestCase(result);
     setLoading(false);
   };
 
@@ -231,7 +232,19 @@ export default function Page({ params }: PageProps) {
 
           {activeTab === "testCase" && (
             <>
-              <TestCaseComponent testCases={testCases} loading={loading} />
+              <div className="max-h-[550px] h-[550px] overflow-y-scroll">
+                {testCase.map((value, index) => {
+                    return (
+                      <TestCaseComponent
+                        key={index}
+                        test_name={`Case ${index + 1}`}
+                        expected={value.expected}
+                        output={value.output}
+                        loading={loading}
+                      />
+                    );
+                  })}
+              </div>
               <div className="flex justify-end mt-4">
                 <Button onClick={handleRunAllTestCase} disabled={loading}>
                   {loading ? "Running..." : "Run All Test"}

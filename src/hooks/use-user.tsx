@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useState } from "react";
-import { isUserType, UserType } from "@/types/user";
+import { isUserType, UserType } from "@/types/request";
 import { BackendClient } from "@/lib/request";
 
 export const useUserData = (): [UserType | null, () => void] => {

@@ -1,4 +1,4 @@
-import { UserType } from "./user";
+import { UserType } from "./request";
 
 export interface ErrorResponse {
     status: boolean;
