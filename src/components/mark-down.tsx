@@ -1,7 +1,5 @@
 "use client";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkBreaks from "remark-breaks";
+import MDEditor from "@uiw/react-md-editor";
 
 interface MarkdownComponentProps {
   content: string;
@@ -12,9 +10,13 @@ export default function MarkdownComponent({ content }: MarkdownComponentProps) {
 
   return (
     <div className="markdown border-b-[1px] pb-8 mt-6 min-w-full">
-      <Markdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-        {formattedContent}
-      </Markdown>
+      <MDEditor
+        height={700}
+        preview="preview"
+        contentEditable={false}
+        value={formattedContent}
+        className="resize-none"
+      />
     </div>
   );
 }
