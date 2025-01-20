@@ -160,26 +160,24 @@ export default function Page({ params }: PageProps) {
         <div className="border rounded-lg p-4">
           <div className="flex justify-between mb-4">
             <div className="flex gap-2">
-              <div>
-                <Button
-                  variant={activeTab === "detail" ? "default" : "outline"}
-                  onClick={() => setActiveTab("detail")}
-                >
-                  Detail
-                </Button>
-                <Button
-                  variant={activeTab === "customInput" ? "default" : "outline"}
-                  onClick={() => setActiveTab("customInput")}
-                >
-                  Custom Input
-                </Button>
-                <Button
-                  variant={activeTab === "testCase" ? "default" : "outline"}
-                  onClick={() => setActiveTab("testCase")}
-                >
-                  Test Case
-                </Button>
-              </div>
+              <Button
+                variant={activeTab === "detail" ? "default" : "outline"}
+                onClick={() => setActiveTab("detail")}
+              >
+                Detail
+              </Button>
+              <Button
+                variant={activeTab === "customInput" ? "default" : "outline"}
+                onClick={() => setActiveTab("customInput")}
+              >
+                Custom Input
+              </Button>
+              <Button
+                variant={activeTab === "testCase" ? "default" : "outline"}
+                onClick={() => setActiveTab("testCase")}
+              >
+                Test Case
+              </Button>
             </div>
           </div>
 
