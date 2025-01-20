@@ -4,8 +4,12 @@ import { useNavigateContext } from "@/components/provider/navigation-provider";
 import { useEffect } from "react";
 import { DataTable } from "@/components/data-table";
 import { BackendClient } from "@/lib/request";
+import { Button } from "@/components/ui/button";
+import { useUserData } from "@/hooks/use-user";
+import Link from "next/link";
 
 export default function Page() {
+  const [userData] = useUserData();
   const setLoading = useLoadingContext();
   const setNavigation = useNavigateContext();
   const client = new BackendClient();
@@ -16,7 +20,14 @@ export default function Page() {
   }, [setLoading, setNavigation]);
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-10 px-5">
+      {userData?.role == "ADMIN" && (
+        <div className="flex justify-end">
+          <Link href="/dashboard/code/add-problem">
+            <Button>Create Problem</Button>
+          </Link>
+        </div>
+      )}
       <DataTable
         fetchData={client.getQuestion}
         columns={[

@@ -1,20 +1,31 @@
 "use client";
-import MDEditor from "@uiw/react-md-editor";
+import MDEditor, { PreviewType } from "@uiw/react-md-editor";
 
 interface MarkdownComponentProps {
   content: string;
+  preview: PreviewType;
+  onChange?: (content: string) => void;
+  editable?: boolean;
 }
 
-export default function MarkdownComponent({ content }: MarkdownComponentProps) {
-  const formattedContent = content.replace(/\\n/g, "  \n");
-
+export default function MarkdownComponent({ content, preview, editable, onChange }: MarkdownComponentProps) {
+  const handleOnchange = (value: string | undefined) => {
+    if (!value || !onChange) {
+      if(onChange){
+        onChange("");
+      }
+      return;
+    }
+    onChange(value)
+  }
   return (
-    <div className="markdown border-b-[1px] pb-8 mt-6 min-w-full">
+    <div className="markdown mt-6 min-w-full">
       <MDEditor
-        height={700}
-        preview="preview"
-        contentEditable={false}
-        value={formattedContent}
+        height={600}
+        preview={preview}
+        contentEditable={editable}
+        value={content}
+        onChange={handleOnchange}
         className="resize-none"
       />
     </div>

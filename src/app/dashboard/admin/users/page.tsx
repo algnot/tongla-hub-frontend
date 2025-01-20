@@ -16,7 +16,7 @@ export default function Page() {
   }, [setLoading, setNavigation]);
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-10 px-5">
       <DataTable
         fetchData={client.getUser}
         columns={[

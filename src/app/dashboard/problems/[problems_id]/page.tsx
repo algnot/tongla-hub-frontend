@@ -146,7 +146,8 @@ export default function Page({ params }: PageProps) {
 
   return (
     <div className="w-full mx-auto p-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[90vh] overflow-y-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto">
+        {/* left component */}
         <div className="border rounded-lg p-4">
           <div className="flex justify-between mb-4">
             <Button>Editor</Button>
@@ -154,10 +155,12 @@ export default function Page({ params }: PageProps) {
           </div>
           <CodeEditor value={code} onChange={(newCode) => setCode(newCode)} />
         </div>
-        <div className="mb-4">
-          <div className="border rounded-lg p-4">
-            <div className="flex justify-between mb-4">
-              <div className="flex gap-2">
+
+        {/* right component */}
+        <div className="border rounded-lg p-4">
+          <div className="flex justify-between mb-4">
+            <div className="flex gap-2">
+              <div>
                 <Button
                   variant={activeTab === "detail" ? "default" : "outline"}
                   onClick={() => setActiveTab("detail")}
@@ -178,67 +181,65 @@ export default function Page({ params }: PageProps) {
                 </Button>
               </div>
             </div>
-
-            {activeTab === "detail" && (
-              <MarkdownComponent content={questionData?.description ?? ""} />
-            )}
-
-            {activeTab === "customInput" && (
-              <>
-                <label
-                  htmlFor="input"
-                  className="block text-md font-medium my-4"
-                >
-                  Input
-                </label>
-                <textarea
-                  id="input"
-                  className="w-full border rounded-md p-2 h-48 md:h-60 overflow-y-scroll resize-none"
-                  value={stdin}
-                  onChange={(e) => setStdin(e.target.value)}
-                />
-                <div className="flex justify-end mt-4">
-                  <Button onClick={handleRun} disabled={loading}>
-                    {loading ? "Running..." : "Run"}
-                  </Button>
-                </div>
-              </>
-            )}
-
-            {activeTab === "testCase" && (
-              <>
-                <TestCaseComponent testCases={testCases} loading={loading} />
-                <div className="flex justify-end mt-4">
-                  <Button onClick={handleRunAllTestCase} disabled={loading}>
-                    {loading ? "Running..." : "Run All Test"}
-                  </Button>
-                </div>
-              </>
-            )}
           </div>
 
-          {activeTab == "customInput" && (
-            <div className="border rounded-lg p-4 mt-4">
-              <label
-                htmlFor="output"
-                className="block text-md font-medium mb-4"
-              >
-                Output
+          {activeTab === "detail" && (
+            <MarkdownComponent
+              editable={false}
+              preview="preview"
+              content={questionData?.description ?? ""}
+            />
+          )}
+
+          {activeTab === "customInput" && (
+            <>
+              <label htmlFor="input" className="block text-md font-medium my-4">
+                Input
               </label>
-              <pre
-                id="output"
-                className="w-full border rounded-md p-2 h-48 md:h-60 overflow-y-auto whitespace-pre-wrap"
-              >
-                {loading ? (
-                  <div className="flex justify-center items-center space-x-2">
-                    <div className="w-4 h-4 border-4 border-t-transparent border-blue-500 border-solid rounded-full animate-spin"></div>
-                    <span>Loading...</span>
-                  </div>
-                ) : (
-                  stdout
-                )}
-              </pre>
-            </div>
+              <textarea
+                id="input"
+                className="w-full border rounded-md p-2 h-48 md:h-60 overflow-y-scroll resize-none"
+                value={stdin}
+                onChange={(e) => setStdin(e.target.value)}
+              />
+              <div className="flex justify-end mt-4">
+                <Button onClick={handleRun} disabled={loading}>
+                  {loading ? "Running..." : "Run"}
+                </Button>
+              </div>
+              <div className="mt-4">
+                <label
+                  htmlFor="output"
+                  className="block text-md font-medium mb-4"
+                >
+                  Output
+                </label>
+                <pre
+                  id="output"
+                  className="w-full border rounded-md p-2 h-48 md:h-60 overflow-y-auto whitespace-pre-wrap"
+                >
+                  {loading ? (
+                    <div className="flex justify-center items-center space-x-2">
+                      <div className="w-4 h-4 border-4 border-t-transparent border-blue-500 border-solid rounded-full animate-spin"></div>
+                      <span>Loading...</span>
+                    </div>
+                  ) : (
+                    stdout
+                  )}
+                </pre>
+              </div>
+            </>
+          )}
+
+          {activeTab === "testCase" && (
+            <>
+              <TestCaseComponent testCases={testCases} loading={loading} />
+              <div className="flex justify-end mt-4">
+                <Button onClick={handleRunAllTestCase} disabled={loading}>
+                  {loading ? "Running..." : "Run All Test"}
+                </Button>
+              </div>
+            </>
           )}
         </div>
       </div>

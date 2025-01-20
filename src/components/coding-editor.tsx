@@ -36,7 +36,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ className, value, onChange }) =
       theme={aceTheme}
       name="code_editor"
       width="100%"
-      height="80vh"
+      height="600px"
       value={value}
       onChange={(value) => {handleOnChange(value)}}
       setOptions={{
