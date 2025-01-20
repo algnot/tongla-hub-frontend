@@ -9,6 +9,13 @@ import { useNavigateContext } from "@/components/provider/navigation-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { BackendClient } from "@/lib/request";
 import { isErrorResponse } from "@/types/payload";
@@ -62,7 +69,8 @@ export default function Page() {
         setLoading(false);
         return;
       }
-      const expected = response.stdout != "" ? response.stdout : response.stderr;
+      const expected =
+        response.stdout != "" ? response.stdout : response.stderr;
       testCase.expected = expected;
     }
     setLoading(false);
@@ -144,16 +152,34 @@ export default function Page() {
               <Button variant="outline">Save</Button>
             </div>
           </div>
+
           {rightActiveTab === "detail" && (
             <>
-              <div className="grid gap-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  placeholder="Sum A+B"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
+              <div className="grid grid-cols-[3fr,1fr] gap-4">
+                <div>
+                  <Label htmlFor="title">Title</Label>
+                  <Input
+                    id="title"
+                    placeholder="Sum A+B"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="rate">Rate</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select rate" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
+                      <SelectItem value="4">4</SelectItem>
+                      <SelectItem value="5">5</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <MarkdownComponent
                 preview="edit"
@@ -163,6 +189,7 @@ export default function Page() {
               />
             </>
           )}
+
           {rightActiveTab === "testCase" && (
             <>
               <div className="max-h-[550px] h-[550px] overflow-y-scroll">
