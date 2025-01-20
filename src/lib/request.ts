@@ -259,7 +259,12 @@ export class BackendClient {
 
   async getQuestionById(id: string): Promise<Question | ErrorResponse> {
     try {
-      const response = await client.get(`/code/get-question-by-id?id=${id}`);
+      const accessToken = getItem("access_token");
+      const response = await client.get(`/code/get-question-by-id?id=${id}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
       return response.data;
     } catch (e) {
       return handlerError(e);

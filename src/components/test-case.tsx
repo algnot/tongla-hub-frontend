@@ -45,7 +45,7 @@ export default function TestCaseComponent({
               isPassed ? "text-green-600" : "text-red-600"
             }`}
           >
-            {output?.output ? (!isPassed ? "incorrect" : "correct") : ""}
+            {output?.run_time_ms ? (!isPassed ? "incorrect" : "correct") : ""}
           </span>
         </div>
 
@@ -72,7 +72,7 @@ export default function TestCaseComponent({
           >
             {expected.expected}
           </textarea>
-          {output?.output && (
+          {output?.run_time_ms && (
             <>
               <div className="text-md">Your Output</div>
               <textarea
