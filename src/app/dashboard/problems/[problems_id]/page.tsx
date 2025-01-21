@@ -3,6 +3,7 @@
 import CodeEditor from "@/components/coding-editor";
 import MarkdownComponent from "@/components/mark-down";
 import { useAlertContext } from "@/components/provider/alert-provider";
+import { useLoadingContext } from "@/components/provider/loading-provider";
 import { useNavigateContext } from "@/components/provider/navigation-provider";
 import TestCaseComponent, { TestCaseProps } from "@/components/test-case";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ export default function Page({ params }: PageProps) {
   const setNavigation = useNavigateContext();
   const [questionData, setQuestionData] = useState<Question | null>(null);
   const [testCase, setTestCase] = useState<TestCaseProps[]>([]);
+  const setFullLoading = useLoadingContext();
 
   const [problemId, setProblemId] = useState<string>("");
   const [code, setCode] = useState<string>("");
@@ -39,6 +41,7 @@ export default function Page({ params }: PageProps) {
     const { problems_id } = await params;
     const problemId = Array.isArray(problems_id) ? problems_id[0] : problems_id;
     setProblemId(problemId);
+    setFullLoading(true);
 
     const response = await client.getQuestionById(problemId);
     if (isErrorResponse(response)) {
@@ -62,6 +65,7 @@ export default function Page({ params }: PageProps) {
     setCode(response.start_code.replace(/\\n/g, "\n"));
     setQuestionData(response);
     setStdin(response.test_cases[0].input);
+    setFullLoading(false);
     setNavigation(
       [
         {
