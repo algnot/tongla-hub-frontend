@@ -21,7 +21,7 @@ import { useUserData } from "@/hooks/use-user";
 import { BackendClient } from "@/lib/request";
 import {
   CreateQuestionRequest,
-  CreateQuestionTestCaseRequest,
+  QuestionTestCaseRequest,
   isErrorResponse,
 } from "@/types/payload";
 import React, { useEffect, useState } from "react";
@@ -128,7 +128,7 @@ export default function Page() {
   };
 
   const preparePayload = (): CreateQuestionRequest => {
-    let testCasesRequest: CreateQuestionTestCaseRequest[] = [];
+    let testCasesRequest: QuestionTestCaseRequest[] = [];
 
     for (const testCase of testCases) {
       testCasesRequest = [
