@@ -15,12 +15,15 @@ import { BackendClient } from "@/lib/request";
 import { isErrorResponse } from "@/types/payload";
 import Link from "next/link";
 import { FormEvent, useRef } from "react";
+import { useSearchParams } from 'next/navigation'
 
 export default function Login() {
   const setAlert = useAlertContext();
   const setFullLoading = useFullLoadingContext();
   const client = new BackendClient();
   const formRef = useRef<HTMLFormElement | null>(null);
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect");
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -44,7 +47,7 @@ export default function Login() {
       "Login Complete",
       `Welcome back ${response.username} :)`,
       () => {
-        window.location.href = "/dashboard";
+        window.location.href = redirect ?? "/dashboard";
       },
       false
     );
@@ -97,7 +100,7 @@ export default function Login() {
                 </div>
                 <div className="mt-6 text-center text-sm">
                   Don&apos;t have an account?{" "}
-                  <Link href="/sign-up" className="underline underline-offset-4">
+                  <Link href={`/sign-up${redirect ? "?redirect=" + redirect : ""}`} className="underline underline-offset-4">
                     Sign up
                   </Link>
                 </div>

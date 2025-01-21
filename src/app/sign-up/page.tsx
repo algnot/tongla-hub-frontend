@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { BackendClient } from "@/lib/request";
 import { isErrorResponse } from "@/types/payload";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { FormEvent, useRef } from "react";
 
 export default function SignUp() {
@@ -15,6 +16,8 @@ export default function SignUp() {
   const setFullLoading = useFullLoadingContext();
   const client = new BackendClient();
   const formRef = useRef<HTMLFormElement | null>(null);
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect");
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -45,7 +48,7 @@ export default function SignUp() {
       "Sign up Complete",
       `Welcome ${response.username} :)`,
       () => {
-        window.location.href = "/dashboard";
+        window.location.href = redirect ?? "/dashboard";
       },
       false
     );
@@ -109,7 +112,7 @@ export default function SignUp() {
                 </div>
                 <div className="mt-6 text-center text-sm">
                   I have an account{" "}
-                  <Link href="/login" className="underline underline-offset-4">
+                  <Link href={`/login${redirect ? "?redirect=" + redirect : ""}`} className="underline underline-offset-4">
                     Login
                   </Link>
                 </div>
