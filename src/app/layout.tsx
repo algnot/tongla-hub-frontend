@@ -18,13 +18,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Suspense fallback={<div>Loading...</div>}>
-          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+          <Suspense fallback={<div></div>}>
             <FullLoadingProvider>
               <AlertDialogProvider>{children}</AlertDialogProvider>
             </FullLoadingProvider>
-          </ThemeProvider>
-        </Suspense>
+          </Suspense>
+        </ThemeProvider>
       </body>
     </html>
   );
