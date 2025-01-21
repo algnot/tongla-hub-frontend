@@ -3,6 +3,7 @@ import "./globals.css";
 import { Metadata } from "next";
 import { FullLoadingProvider } from "@/components/provider/full-loading-provider";
 import { AlertDialogProvider } from "@/components/provider/alert-provider";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "tongla coding",
@@ -17,11 +18,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          <FullLoadingProvider>
-            <AlertDialogProvider>{children}</AlertDialogProvider>
-          </FullLoadingProvider>
-        </ThemeProvider>
+        <Suspense fallback={<div>Loading...</div>}>
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+            <FullLoadingProvider>
+              <AlertDialogProvider>{children}</AlertDialogProvider>
+            </FullLoadingProvider>
+          </ThemeProvider>
+        </Suspense>
       </body>
     </html>
   );
