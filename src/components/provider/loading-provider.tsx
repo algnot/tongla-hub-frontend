@@ -33,7 +33,10 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
 
   return (
     <LoadingContext.Provider value={onChangeLoading}>
-      {loading ? <Loading /> : children}
+      {loading && <Loading />}
+      <div className={`${loading && 'hidden'}`}>
+        {children}
+      </div>
     </LoadingContext.Provider>
   );
 }

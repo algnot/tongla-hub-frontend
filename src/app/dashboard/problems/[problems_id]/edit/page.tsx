@@ -5,6 +5,7 @@ import AddTestCaseComponent, {
 import CodeEditor from "@/components/coding-editor";
 import MarkdownComponent from "@/components/mark-down";
 import { useAlertContext } from "@/components/provider/alert-provider";
+import { useLoadingContext } from "@/components/provider/loading-provider";
 import { useNavigateContext } from "@/components/provider/navigation-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,32 +21,32 @@ import { Switch } from "@/components/ui/switch";
 import { useUserData } from "@/hooks/use-user";
 import { BackendClient } from "@/lib/request";
 import {
-  CreateQuestionRequest,
-  CreateQuestionTestCaseRequest,
+  QuestionTestCaseRequest,
+  UpdateQuestionRequest,
   isErrorResponse,
 } from "@/types/payload";
 import React, { useEffect, useState } from "react";
 
-export default function Page() {
+type PageProps = {
+  params: Promise<{ problems_id: string[] }>;
+};
+
+export default function Page({ params }: PageProps) {
   const client = new BackendClient();
   const [loading, setLoading] = useState<boolean>(false);
   const setAlert = useAlertContext();
   const [userData] = useUserData();
   const setNavigation = useNavigateContext();
+  const setFullLoading = useLoadingContext();
 
-  const [startCode, setStartCode] = useState<string>(
-    "input = input()\nprint(input)"
-  );
-  const [answerCode, setAnswerCode] = useState<string>(
-    "# Add answer code and add input test case\ninput = input()\nprint(input)"
-  );
+  const [problemId, setProblemId] = useState<string>("");
+  const [startCode, setStartCode] = useState<string>("");
+  const [answerCode, setAnswerCode] = useState<string>("");
   const [title, setTitle] = useState<string>("");
-  const [description, setDescription] = useState<string>("### hello world");
+  const [description, setDescription] = useState<string>("");
   const [rate, setRate] = useState<number>(1);
   const [isPublic, setIsPublic] = useState<boolean>(true);
-  const [testCases, setTestCases] = useState<AddTestCaseComponentProps[]>([
-    { input: "", expected: "" },
-  ]);
+  const [testCases, setTestCases] = useState<AddTestCaseComponentProps[]>([]);
 
   const [rightActiveTab, setRightActiveTab] = useState<"detail" | "testCase">(
     "detail"
@@ -56,6 +57,7 @@ export default function Page() {
   >("startCode");
 
   useEffect(() => {
+    fetchQuestionData();
     setNavigation(
       [
         {
@@ -63,10 +65,71 @@ export default function Page() {
           path: "/dashboard/problems",
         },
       ],
-      "Create Problem"
+      "Edit Problem"
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const fetchQuestionData = async () => {
+    setFullLoading(true);
+    const { problems_id } = await params;
+    const problemId = Array.isArray(problems_id) ? problems_id[0] : problems_id;
+    setProblemId(problemId);
+
+    const response = await client.getQuestionById(problemId);
+    if (isErrorResponse(response)) {
+      setAlert(
+        "Error",
+        response.message,
+        () => {
+          window.location.href = `/dashboard/problems/${problems_id}`;
+        },
+        true
+      );
+      return;
+    }
+
+    if (
+      (userData?.role != "ADMIN" || userData.uid != response.owner.id) &&
+      userData !== null
+    ) {
+      window.location.href = `/dashboard/problems/${problems_id}`;
+      return;
+    }
+
+    setStartCode(response.start_code);
+    setAnswerCode(response.answer_code);
+    setTitle(response.title);
+    setRate(response.rate);
+    setIsPublic(response.is_public);
+    setDescription(response.description);
+
+    let testCaseList: AddTestCaseComponentProps[] = [];
+    for (const testCase of response.test_cases) {
+      testCaseList = [
+        ...testCaseList,
+        {
+          input: testCase.input,
+          expected: testCase.expected,
+        },
+      ];
+    }
+    setTestCases(testCaseList);
+    setFullLoading(false);
+    setNavigation(
+      [
+        {
+          name: "All Problems",
+          path: "/dashboard/problems",
+        },
+        {
+          name: response.title,
+          path: "/dashboard/problems/" + response.id,
+        },
+      ],
+      "Edit Problem"
+    );
+  };
 
   const onAddTestCase = () => {
     setTestCases((prev) => [...prev, { input: "", expected: "" }]);
@@ -97,7 +160,7 @@ export default function Page() {
     setLoading(false);
   };
 
-  const validatePayload = (payload: CreateQuestionRequest): string => {
+  const validatePayload = (payload: UpdateQuestionRequest): string => {
     if (!payload.title) {
       return "title is require";
     }
@@ -127,8 +190,8 @@ export default function Page() {
     return "";
   };
 
-  const preparePayload = (): CreateQuestionRequest => {
-    let testCasesRequest: CreateQuestionTestCaseRequest[] = [];
+  const preparePayload = (): UpdateQuestionRequest => {
+    let testCasesRequest: QuestionTestCaseRequest[] = [];
 
     for (const testCase of testCases) {
       testCasesRequest = [
@@ -142,6 +205,7 @@ export default function Page() {
     }
 
     return {
+      id: Number(problemId),
       title: title,
       description: description,
       start_code: startCode,
@@ -162,7 +226,7 @@ export default function Page() {
     }
 
     setLoading(true);
-    const response = await client.addQuestion(payload);
+    const response = await client.updateQuestion(payload);
     if (isErrorResponse(response)) {
       setAlert("Error", response.message, 0, true);
       setLoading(false);
@@ -170,12 +234,12 @@ export default function Page() {
     }
 
     setAlert(
-      "Created",
-      "your problem is created!",
+      "Updated",
+      "your problem is updated!",
       () => {
         window.location.href = `/dashboard/problems/${response.id}`;
       },
-      false
+      true
     );
   };
 

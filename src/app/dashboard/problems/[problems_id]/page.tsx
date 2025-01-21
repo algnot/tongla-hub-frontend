@@ -6,9 +6,11 @@ import { useAlertContext } from "@/components/provider/alert-provider";
 import { useNavigateContext } from "@/components/provider/navigation-provider";
 import TestCaseComponent, { TestCaseProps } from "@/components/test-case";
 import { Button } from "@/components/ui/button";
+import { useUserData } from "@/hooks/use-user";
 import { BackendClient } from "@/lib/request";
 import { isErrorResponse } from "@/types/payload";
 import { Question } from "@/types/request";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type PageProps = {
@@ -17,11 +19,13 @@ type PageProps = {
 
 export default function Page({ params }: PageProps) {
   const client = new BackendClient();
+  const [userData] = useUserData();
   const setAlert = useAlertContext();
   const setNavigation = useNavigateContext();
   const [questionData, setQuestionData] = useState<Question | null>(null);
   const [testCase, setTestCase] = useState<TestCaseProps[]>([]);
 
+  const [problemId, setProblemId] = useState<string>("");
   const [code, setCode] = useState<string>("");
   const [stdin, setStdin] = useState<string>("");
   const [stdout, setStdout] = useState<string>("PyDev console: starting");
@@ -34,6 +38,7 @@ export default function Page({ params }: PageProps) {
   const fetchQuestionData = async () => {
     const { problems_id } = await params;
     const problemId = Array.isArray(problems_id) ? problems_id[0] : problems_id;
+    setProblemId(problemId);
 
     const response = await client.getQuestionById(problemId);
     if (isErrorResponse(response)) {
@@ -147,6 +152,13 @@ export default function Page({ params }: PageProps) {
 
   return (
     <div className="w-full mx-auto p-4">
+      {userData?.role == "ADMIN" && userData.uid == questionData?.owner.id && (
+        <div className="flex justify-end mb-4">
+          <Link href={`/dashboard/problems/${problemId}/edit`}>
+            <Button>Edit Problem</Button>
+          </Link>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto">
         {/* left component */}
         <div className="border rounded-lg p-4">

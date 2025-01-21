@@ -37,6 +37,7 @@ export interface TestCase {
 }
 
 export interface Owner {
+  id: number;
   username: string;
 }
 
@@ -50,6 +51,7 @@ export interface Question {
   owner: Owner;
   rate: number;
   start_code: string;
+  answer_code: string;
   submitted: number;
   test_cases: TestCase[];
   title: string;

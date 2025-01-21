@@ -22,15 +22,14 @@ export function AlertDialogComponent({
   text,
   action,
   onCancel,
-  canCencel
+  canCencel,
 }: {
   title: string;
   text: string;
   action: number | (() => void);
   onCancel: () => void;
-  canCencel: boolean
+  canCencel: boolean;
 }) {
-
   return (
     <AlertDialog open={title !== "" || text !== ""}>
       <AlertDialogContent>
@@ -39,11 +38,18 @@ export function AlertDialogComponent({
           <AlertDialogDescription>{text}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          {
-            canCencel && <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
-          }
-          {typeof action !== "number" && (
-            <AlertDialogAction onClick={action}>Continue</AlertDialogAction>
+          {canCencel && (
+            <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
+          )}
+          {typeof action === "function" && (
+            <AlertDialogAction
+              onClick={() => {
+                action();
+                onCancel();
+              }}
+            >
+              Continue
+            </AlertDialogAction>
           )}
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -52,7 +58,12 @@ export function AlertDialogComponent({
 }
 
 const AlertContext = createContext(
-  (title: string, text: string, action: number | (() => void), canCencel: boolean) => {
+  (
+    title: string,
+    text: string,
+    action: number | (() => void),
+    canCencel: boolean
+  ) => {
     return [title, text, action, canCencel];
   }
 );
@@ -60,11 +71,16 @@ const AlertContext = createContext(
 export function AlertDialogProvider({ children }: { children: ReactNode }) {
   const [title, setTitle] = useState<string>("");
   const [text, setText] = useState<string>("");
-  const [action, setAction] = useState<number | (() => void) >(0);
+  const [action, setAction] = useState<number | (() => void)>(0);
   const [canCencel, setCanCencel] = useState<boolean>(false);
 
   const onChangeAlert = useCallback(
-    (title: string, text: string, action: number | (() => void), canCencel: boolean) => {
+    (
+      title: string,
+      text: string,
+      action: number | (() => void),
+      canCencel: boolean
+    ) => {
       setTitle(title);
       setText(text);
       setAction(action);

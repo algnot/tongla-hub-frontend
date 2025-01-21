@@ -1,4 +1,5 @@
 import {
+  CreateQuestionRequest,
   ErrorResponse,
   GetEmailSenderResponse,
   GetOneTimePasswordResponse,
@@ -11,18 +12,20 @@ import {
   ResetPasswordGetTokenResponse,
   SignUpRequest,
   SignUpResponse,
+  UpdateQuestionRequest,
 } from "@/types/payload";
 import axios, { AxiosInstance } from "axios";
 import { getItem, removeItem, setItem } from "./storage";
-import { ExecuteCodeRequest, ExecuteCodeResponse, Question, UserType } from "@/types/request";
+import {
+  ExecuteCodeRequest,
+  ExecuteCodeResponse,
+  Question,
+  UserType,
+} from "@/types/request";
 
 const handlerError = (error: unknown): ErrorResponse => {
   if (axios.isAxiosError(error)) {
-    if (
-      error.response &&
-      error.response.data &&
-      error.response.data.message
-    ) {
+    if (error.response && error.response.data && error.response.data.message) {
       return {
         status: false,
         message: error.response.data.message,
@@ -39,7 +42,7 @@ const handlerError = (error: unknown): ErrorResponse => {
       message: "An unknow error occurred. try again!",
     };
   }
-}
+};
 
 const client: AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BACKEND_PATH,
@@ -98,8 +101,9 @@ export class BackendClient {
     }
   }
 
-
-  async signUp(payload: SignUpRequest): Promise<SignUpResponse | ErrorResponse> {
+  async signUp(
+    payload: SignUpRequest
+  ): Promise<SignUpResponse | ErrorResponse> {
     try {
       const response = await client.post("/auth/sign-up", payload);
       setItem("access_token", response.data.access_token);
@@ -123,10 +127,12 @@ export class BackendClient {
     }
   }
 
-  async resetPasswordGetOtp(email: string): Promise<ResetPasswordGetOtpResponse | ErrorResponse> {
+  async resetPasswordGetOtp(
+    email: string
+  ): Promise<ResetPasswordGetOtpResponse | ErrorResponse> {
     try {
       const response = await client.post("/auth/reset-password-otp", {
-        email
+        email,
       });
       return response.data;
     } catch (e) {
@@ -134,7 +140,9 @@ export class BackendClient {
     }
   }
 
-  async resetPasswordGetToken(payload: ResetPasswordGetTokenRequest): Promise<ResetPasswordGetTokenResponse | ErrorResponse> {
+  async resetPasswordGetToken(
+    payload: ResetPasswordGetTokenRequest
+  ): Promise<ResetPasswordGetTokenResponse | ErrorResponse> {
     try {
       const response = await client.post("/auth/reset-password-token", payload);
       return response.data;
@@ -143,15 +151,22 @@ export class BackendClient {
     }
   }
 
-  async resetPassword(password: string, token: string): Promise<UserType | ErrorResponse> {
+  async resetPassword(
+    password: string,
+    token: string
+  ): Promise<UserType | ErrorResponse> {
     try {
-      const response = await client.post("/auth/reset-password", {
-        password
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const response = await client.post(
+        "/auth/reset-password",
+        {
+          password,
         },
-      });
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setItem("access_token", response.data.access_token);
       setItem("refresh_token", response.data.refresh_token);
       return await this.getUserInfo();
@@ -160,16 +175,23 @@ export class BackendClient {
     }
   }
 
-  async getUser(limit: number, offset: number | "", text: string): Promise<GetUserResponse | ErrorResponse> {
+  async getUser(
+    limit: number,
+    offset: number | "",
+    text: string
+  ): Promise<GetUserResponse | ErrorResponse> {
     try {
       const accessToken = getItem("access_token");
-      const response = await client.get(`/data/list?limit=${limit}&offset=${offset}&text=${text}&model=user`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const response = await client.get(
+        `/data/list?limit=${limit}&offset=${offset}&text=${text}&model=user`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
       return response.data;
-    } catch (e) {      
+    } catch (e) {
       if (axios.isAxiosError(e) && e.status === 403) {
         removeItem("access_token");
         const refreshToken = getItem("refresh_token");
@@ -182,16 +204,23 @@ export class BackendClient {
     }
   }
 
-  async getEmailSender(limit: number, offset: number | "", text: string): Promise<GetEmailSenderResponse | ErrorResponse> {
+  async getEmailSender(
+    limit: number,
+    offset: number | "",
+    text: string
+  ): Promise<GetEmailSenderResponse | ErrorResponse> {
     try {
       const accessToken = getItem("access_token");
-      const response = await client.get(`/data/list?limit=${limit}&offset=${offset}&text=${text}&model=email`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const response = await client.get(
+        `/data/list?limit=${limit}&offset=${offset}&text=${text}&model=email`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
       return response.data;
-    } catch (e) {      
+    } catch (e) {
       if (axios.isAxiosError(e) && e.status === 403) {
         removeItem("access_token");
         const refreshToken = getItem("refresh_token");
@@ -204,16 +233,23 @@ export class BackendClient {
     }
   }
 
-  async getOneTimePassword(limit: number, offset: number | "", text: string): Promise<GetOneTimePasswordResponse | ErrorResponse> {
+  async getOneTimePassword(
+    limit: number,
+    offset: number | "",
+    text: string
+  ): Promise<GetOneTimePasswordResponse | ErrorResponse> {
     try {
       const accessToken = getItem("access_token");
-      const response = await client.get(`/data/list?limit=${limit}&offset=${offset}&text=${text}&model=otp`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const response = await client.get(
+        `/data/list?limit=${limit}&offset=${offset}&text=${text}&model=otp`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
       return response.data;
-    } catch (e) {      
+    } catch (e) {
       if (axios.isAxiosError(e) && e.status === 403) {
         removeItem("access_token");
         const refreshToken = getItem("refresh_token");
@@ -226,16 +262,23 @@ export class BackendClient {
     }
   }
 
-  async getQuestion(limit: number, offset: number | "", text: string): Promise<GetQuestionResponse | ErrorResponse> {
+  async getQuestion(
+    limit: number,
+    offset: number | "",
+    text: string
+  ): Promise<GetQuestionResponse | ErrorResponse> {
     try {
       const accessToken = getItem("access_token");
-      const response = await client.get(`/data/list?limit=${limit}&offset=${offset}&text=${text}&model=question`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const response = await client.get(
+        `/data/list?limit=${limit}&offset=${offset}&text=${text}&model=question`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
       return response.data;
-    } catch (e) {      
+    } catch (e) {
       if (axios.isAxiosError(e) && e.status === 403) {
         removeItem("access_token");
         const refreshToken = getItem("refresh_token");
@@ -248,7 +291,9 @@ export class BackendClient {
     }
   }
 
-  async executeCode(payload: ExecuteCodeRequest): Promise<ExecuteCodeResponse | ErrorResponse> {
+  async executeCode(
+    payload: ExecuteCodeRequest
+  ): Promise<ExecuteCodeResponse | ErrorResponse> {
     try {
       const response = await client.post("/code/execute", payload);
       return response.data;
@@ -261,6 +306,38 @@ export class BackendClient {
     try {
       const accessToken = getItem("access_token");
       const response = await client.get(`/code/get-question-by-id?id=${id}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      return response.data;
+    } catch (e) {
+      return handlerError(e);
+    }
+  }
+
+  async addQuestion(
+    payload: CreateQuestionRequest
+  ): Promise<Question | ErrorResponse> {
+    try {
+      const accessToken = getItem("access_token");
+      const response = await client.post(`/code/add-question`, payload, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      return response.data;
+    } catch (e) {
+      return handlerError(e);
+    }
+  }
+
+  async updateQuestion(
+    payload: UpdateQuestionRequest
+  ): Promise<Question | ErrorResponse> {
+    try {
+      const accessToken = getItem("access_token");
+      const response = await client.put(`/code/update-question`, payload, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
