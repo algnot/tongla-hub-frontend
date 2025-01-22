@@ -141,6 +141,14 @@ export default function Page({ params }: PageProps) {
     setLoading(false);
   };
 
+  const onFillAnswer = () => {
+    setCode(questionData?.answer_code ?? "");
+  }
+
+  const onFillStartCode = () => {
+    setCode(questionData?.start_code ?? "");
+  }
+
   useEffect(() => {
     fetchQuestionData();
     setNavigation(
@@ -157,7 +165,9 @@ export default function Page({ params }: PageProps) {
   return (
     <div className="w-full mx-auto p-4">
       {userData?.role == "ADMIN" && userData.uid == questionData?.owner.id && (
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end mb-4 gap-2">
+          <Button variant="outline" onClick={onFillStartCode}>Fill Start Code</Button>
+          <Button variant="outline" onClick={onFillAnswer}>Fill Answer</Button>
           <Link href={`/dashboard/problems/${problemId}/edit`}>
             <Button>Edit Problem</Button>
           </Link>
