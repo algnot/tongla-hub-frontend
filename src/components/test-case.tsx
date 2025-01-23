@@ -1,6 +1,7 @@
 import { TestCase } from "@/types/request";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import React, { useState } from "react";
+import { diffChars } from "diff";
 
 interface Output {
   output: string;
@@ -18,10 +19,30 @@ export default function TestCaseComponent({
   test_name,
   expected,
   output,
-  loading
+  loading,
 }: TestCaseProps) {
   const [isShow, setIsShow] = useState<boolean>(false);
-  const isPassed = output?.output ? expected.expected == output?.output : false;
+  const isPassed = output?.output ? expected.expected === output?.output : false;
+
+  const getWordDiff = (expected: string, actual: string) => {
+    const wordDiff = diffChars(expected, actual);
+    console.log(wordDiff);
+    
+    return wordDiff.map((wordPart, index) => (
+      <span
+        key={index}
+        className={
+          wordPart.added
+            ? "bg-green-600"
+            : wordPart.removed
+            ? "bg-red-600"
+            : ""
+        }
+      >
+        {(wordPart.added || wordPart.removed) ? wordPart.value.replace(/\n/g, "\\n") : wordPart.value}
+      </span>
+    ));
+  };
 
   if (loading) {
     return (
@@ -74,13 +95,24 @@ export default function TestCaseComponent({
           </textarea>
           {output?.run_time_ms && (
             <>
-              <div className="text-md">Your Output</div>
+              {/* <div className="text-md">Your Output</div>
               <textarea
                 disabled
                 className="w-full border rounded-md p-2 h-32 overflow-y-auto whitespace-pre-wrap resize-none mt-2"
               >
                 {output?.output}
-              </textarea>
+              </textarea> */}
+              {!isPassed && (
+                <div className="mt-4">
+                  <div className="text-md">Your Output</div>
+                  <div
+                    className="w-full border rounded-md p-2 h-32 overflow-y-auto whitespace-pre-wrap mt-2"
+                    style={{ fontFamily: "monospace" }}
+                  >
+                    {getWordDiff(expected.expected, output?.output || "")}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
