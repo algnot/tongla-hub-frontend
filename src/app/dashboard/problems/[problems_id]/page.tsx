@@ -11,6 +11,7 @@ import { useUserData } from "@/hooks/use-user";
 import { BackendClient } from "@/lib/request";
 import { isErrorResponse } from "@/types/payload";
 import { Question } from "@/types/request";
+import { RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -34,14 +35,16 @@ export default function Page({ params }: PageProps) {
 
   const [loading, setLoading] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<
-    "detail" | "customInput" | "testCase"
+    "detail" | "customInput" | "testCase" | "yourSubmit"
   >("detail");
 
-  const fetchQuestionData = async () => {
+  const fetchQuestionData = async (forceReload: boolean) => {
     const { problems_id } = await params;
     const problemId = Array.isArray(problems_id) ? problems_id[0] : problems_id;
     setProblemId(problemId);
-    setFullLoading(true);
+    if (!forceReload) {
+      setFullLoading(true);
+    }
 
     const response = await client.getQuestionById(problemId);
     if (isErrorResponse(response)) {
@@ -62,7 +65,17 @@ export default function Page({ params }: PageProps) {
       ];
     }
     setTestCase(testCaseList);
-    setCode(response.start_code.replace(/\\n/g, "\n"));
+    if (response.submit_info.id != 0) {
+      if (response.submit_info.status == "PENDING") {
+        setTimeout(() => {
+          fetchQuestionData(true);
+        }, 5000);
+      }
+      setActiveTab("yourSubmit");
+      setCode(response.submit_info.code.replace(/\\n/g, "\n"));
+    } else {
+      setCode(response.start_code.replace(/\\n/g, "\n"));
+    }
     setQuestionData(response);
     setStdin(response.test_cases[0].input);
     setFullLoading(false);
@@ -132,8 +145,8 @@ export default function Page({ params }: PageProps) {
           test_name: `Case ${count++}`,
           output: {
             output: output,
-            run_time_ms: response.runtime
-          }
+            run_time_ms: response.runtime,
+          },
         },
       ];
     }
@@ -143,14 +156,45 @@ export default function Page({ params }: PageProps) {
 
   const onFillAnswer = () => {
     setCode(questionData?.answer_code ?? "");
-  }
+  };
 
   const onFillStartCode = () => {
     setCode(questionData?.start_code ?? "");
-  }
+  };
+
+  const onSubmitCode = () => {
+    setAlert(
+      "Confirm Submit",
+      "Do you want to submit this code?",
+      async () => {
+        setFullLoading(true);
+        const response = await client.submitCode({
+          question_id: parseInt(problemId),
+          code: code,
+        });
+
+        if (isErrorResponse(response)) {
+          setFullLoading(false);
+          setAlert("Error", response.message, 0, true);
+          return;
+        }
+
+        setAlert(
+          "Submited",
+          "your code is submitted",
+          async () => {
+            setFullLoading(false);
+            fetchQuestionData(false);
+          },
+          false
+        );
+      },
+      true
+    );
+  };
 
   useEffect(() => {
-    fetchQuestionData();
+    fetchQuestionData(false);
     setNavigation(
       [
         {
@@ -164,21 +208,30 @@ export default function Page({ params }: PageProps) {
 
   return (
     <div className="w-full mx-auto p-4">
-      {(userData?.role == "ADMIN" || userData?.uid == questionData?.owner.id) && (
-        <div className="flex justify-end mb-4 gap-2">
-          <Button variant="outline" onClick={onFillStartCode}>Fill Start Code</Button>
-          <Button variant="outline" onClick={onFillAnswer}>Fill Answer</Button>
-          <Link href={`/dashboard/problems/${problemId}/edit`}>
-            <Button>Edit Problem</Button>
-          </Link>
-        </div>
-      )}
+      <div className="flex justify-end mb-4 gap-2">
+        <Button onClick={onSubmitCode}>
+          {questionData?.submit_info.id != 0 ? "Resubmit Code" : "Submit Code"}
+        </Button>
+        {(userData?.role == "ADMIN" ||
+          userData?.uid == questionData?.owner.id) && (
+          <>
+            <Link href={`/dashboard/problems/${problemId}/edit`}>
+              <Button>Edit Problem</Button>
+            </Link>
+            <Button variant="outline" onClick={onFillAnswer}>
+              Fill Answer
+            </Button>
+          </>
+        )}
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto">
         {/* left component */}
         <div className="border rounded-lg p-4">
           <div className="flex justify-between mb-4">
-            <Button>Editor</Button>
-            <Button variant="outline">Python (3.10)</Button>
+            <Button>Python (3.10)</Button>
+            <Button variant="outline" onClick={onFillStartCode}>
+              Reset Code
+            </Button>
           </div>
           <CodeEditor value={code} onChange={(newCode) => setCode(newCode)} />
         </div>
@@ -186,7 +239,7 @@ export default function Page({ params }: PageProps) {
         {/* right component */}
         <div className="border rounded-lg p-4">
           <div className="flex justify-between mb-4">
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button
                 variant={activeTab === "detail" ? "default" : "outline"}
                 onClick={() => setActiveTab("detail")}
@@ -205,6 +258,14 @@ export default function Page({ params }: PageProps) {
               >
                 Test Case
               </Button>
+              {questionData?.submit_info.id != 0 && (
+                <Button
+                  variant={activeTab === "yourSubmit" ? "default" : "outline"}
+                  onClick={() => setActiveTab("yourSubmit")}
+                >
+                  Your Submit
+                </Button>
+              )}
             </div>
           </div>
 
@@ -260,16 +321,16 @@ export default function Page({ params }: PageProps) {
             <>
               <div className="max-h-[550px] h-[550px] overflow-y-scroll">
                 {testCase.map((value, index) => {
-                    return (
-                      <TestCaseComponent
-                        key={index}
-                        test_name={`Case ${index + 1}`}
-                        expected={value.expected}
-                        output={value.output}
-                        loading={loading}
-                      />
-                    );
-                  })}
+                  return (
+                    <TestCaseComponent
+                      key={index}
+                      test_name={`Case ${index + 1}`}
+                      expected={value.expected}
+                      output={value.output}
+                      loading={loading}
+                    />
+                  );
+                })}
               </div>
               <div className="flex justify-end mt-4">
                 <Button onClick={handleRunAllTestCase} disabled={loading}>
@@ -278,6 +339,70 @@ export default function Page({ params }: PageProps) {
               </div>
             </>
           )}
+
+          {activeTab === "yourSubmit" &&
+            questionData?.submit_info.status != "PENDING" && (
+              <>
+                <div
+                  className={`text-xl mb-3 ${
+                    questionData?.submit_info.score ==
+                    questionData?.submit_info.max_score
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  Score: {questionData?.submit_info.score}/
+                  {questionData?.submit_info.max_score} (
+                  {(
+                    ((questionData?.submit_info.score ?? 0) /
+                      (questionData?.submit_info.max_score ?? 1)) *
+                    100
+                  ).toFixed(2)}
+                  %)
+                </div>
+                <div className="max-h-[550px] h-[550px] overflow-y-scroll">
+                  {questionData?.submit_info.info.map((value, index) => {
+                    return (
+                      <TestCaseComponent
+                        key={index}
+                        test_name={`Case ${index + 1}`}
+                        forceCorrect={value.score == 1}
+                        showOnlyOutput={true}
+                        expected={{
+                          expected: "hidden expected",
+                          expected_run_time_ms: value.expected_run_time_ms,
+                          id: value.test_case_id,
+                          input: "hidden input",
+                        }}
+                        output={{
+                          output: value.description,
+                          run_time_ms: value.output.runtime,
+                        }}
+                        loading={false}
+                      />
+                    );
+                  })}
+                </div>
+                <div className="flex justify-end mt-4">
+                  <Button
+                    onClick={() => {
+                      setCode(questionData?.submit_info.code ?? "");
+                    }}
+                    variant="outline"
+                  >
+                    Your Submit Code
+                  </Button>
+                </div>
+              </>
+            )}
+
+          {activeTab === "yourSubmit" &&
+            questionData?.submit_info.status === "PENDING" && (
+              <div className="flex justify-center items-center text-2xl gap-2 pt-4">
+                <span>Your submission is pending review.</span>
+                <RefreshCw className="animate-spin" size={24} />
+              </div>
+            )}
         </div>
       </div>
     </div>

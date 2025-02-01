@@ -48,6 +48,7 @@ export interface Question {
   id: number;
   is_public: boolean;
   is_system_question: boolean;
+  submit_info: SubmitInfo;
   owner: Owner;
   rate: number;
   start_code: string;
@@ -55,4 +56,32 @@ export interface Question {
   submitted: number;
   test_cases: TestCase[];
   title: string;
+}
+
+export interface SubmitInfoInfo {
+  description: string;
+  expected_output: string;
+  expected_run_time_ms: number;
+  output: ExecuteCodeResponse;
+  score: number;
+  test_case_id: number;
+}
+
+export interface SubmitInfo {
+  id: number;
+  code: string;
+  max_score: number;
+  score: number;
+  status: "PENDING" | "FINISH";
+  info: SubmitInfoInfo[];
+}
+
+export interface SubmitCodeRequest {
+  question_id: number;
+  code: string;
+}
+
+export interface SubmitCodeResponse {
+  id: number;
+  status: "PENDING" | "FINISH";
 }

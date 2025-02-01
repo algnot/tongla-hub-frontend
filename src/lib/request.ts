@@ -20,6 +20,8 @@ import {
   ExecuteCodeRequest,
   ExecuteCodeResponse,
   Question,
+  SubmitCodeRequest,
+  SubmitCodeResponse,
   UserType,
 } from "@/types/request";
 
@@ -338,6 +340,20 @@ export class BackendClient {
     try {
       const accessToken = getItem("access_token");
       const response = await client.put(`/code/update-question`, payload, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      return response.data;
+    } catch (e) {
+      return handlerError(e);
+    }
+  }
+
+  async submitCode(payload: SubmitCodeRequest): Promise<SubmitCodeResponse | ErrorResponse> {
+    try {
+      const accessToken = getItem("access_token");
+      const response = await client.post(`/code/submit`, payload, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },

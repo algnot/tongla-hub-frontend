@@ -1,7 +1,7 @@
 import { TestCase } from "@/types/request";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import React, { useState } from "react";
-import { diffChars } from "diff";
+// import { diffChars } from "diff";
 
 interface Output {
   output: string;
@@ -13,6 +13,8 @@ export type TestCaseProps = {
   expected: TestCase;
   output?: Output;
   loading?: boolean;
+  forceCorrect?: boolean;
+  showOnlyOutput?: boolean;
 };
 
 export default function TestCaseComponent({
@@ -20,29 +22,32 @@ export default function TestCaseComponent({
   expected,
   output,
   loading,
+  forceCorrect,
+  showOnlyOutput,
 }: TestCaseProps) {
   const [isShow, setIsShow] = useState<boolean>(false);
-  const isPassed = output?.output ? expected.expected === output?.output : false;
+  const isPassed = output?.output
+    ? expected.expected === output?.output
+    : false;
 
-  const getWordDiff = (expected: string, actual: string) => {
-    const wordDiff = diffChars(expected, actual);
-    console.log(wordDiff);
-    
-    return wordDiff.map((wordPart, index) => (
-      <span
-        key={index}
-        className={
-          wordPart.added
-            ? "bg-green-600"
-            : wordPart.removed
-            ? "bg-red-600"
-            : ""
-        }
-      >
-        {(wordPart.added || wordPart.removed) ? wordPart.value.replace(/\n/g, "\\n") : wordPart.value}
-      </span>
-    ));
-  };
+  // const getWordDiff = (expected: string, actual: string) => {
+  //   const wordDiff = diffChars(expected, actual);
+
+  //   return wordDiff.map((wordPart, index) => (
+  //     <span
+  //       key={index}
+  //       className={
+  //         wordPart.added
+  //           ? "bg-green-600"
+  //           : wordPart.removed
+  //           ? "bg-red-600"
+  //           : ""
+  //       }
+  //     >
+  //       {(wordPart.added || wordPart.removed) ? wordPart.value.replace(/\n/g, "\\n") : wordPart.value}
+  //     </span>
+  //   ));
+  // };
 
   if (loading) {
     return (
@@ -63,10 +68,14 @@ export default function TestCaseComponent({
           <div>{test_name}</div>
           <span
             className={`text-sm ${
-              isPassed ? "text-green-600" : "text-red-600"
+              isPassed || forceCorrect ? "text-green-600" : "text-red-600"
             }`}
           >
-            {output?.run_time_ms ? (!isPassed ? "incorrect" : "correct") : ""}
+            {output?.run_time_ms
+              ? !isPassed && !forceCorrect
+                ? "incorrect"
+                : "correct"
+              : ""}
           </span>
         </div>
 
@@ -79,29 +88,26 @@ export default function TestCaseComponent({
 
       {isShow && (
         <div className="mt-6">
-          <div className="text-md">Input</div>
-          <textarea
-            disabled
-            className="w-full border rounded-md p-2 h-32 overflow-y-auto whitespace-pre-wrap resize-none mt-2"
-          >
-            {expected.input}
-          </textarea>
-          <div className="text-md">Expected Output</div>
-          <textarea
-            disabled
-            className="w-full border rounded-md p-2 h-32 overflow-y-auto whitespace-pre-wrap resize-none mt-2"
-          >
-            {expected.expected}
-          </textarea>
-          {output?.run_time_ms && (
+          {!showOnlyOutput && (
             <>
-              {/* <div className="text-md">Your Output</div>
+              <div className="text-md">Input</div>
               <textarea
                 disabled
                 className="w-full border rounded-md p-2 h-32 overflow-y-auto whitespace-pre-wrap resize-none mt-2"
               >
-                {output?.output}
-              </textarea> */}
+                {expected.input}
+              </textarea>
+              <div className="text-md">Expected Output</div>
+              <textarea
+                disabled
+                className="w-full border rounded-md p-2 h-32 overflow-y-auto whitespace-pre-wrap resize-none mt-2"
+              >
+                {expected.expected}
+              </textarea>
+            </>
+          )}
+          {output?.run_time_ms && (
+            <>
               {!isPassed && (
                 <div className="mt-4">
                   <div className="text-md">Your Output</div>
@@ -109,7 +115,7 @@ export default function TestCaseComponent({
                     className="w-full border rounded-md p-2 h-32 overflow-y-auto whitespace-pre-wrap mt-2"
                     style={{ fontFamily: "monospace" }}
                   >
-                    {getWordDiff(expected.expected, output?.output || "")}
+                    {output?.output || ""}
                   </div>
                 </div>
               )}

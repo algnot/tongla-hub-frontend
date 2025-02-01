@@ -22,14 +22,21 @@ export function AlertDialogComponent({
   text,
   action,
   onCancel,
-  canCencel,
+  canCancel,
 }: {
   title: string;
   text: string;
   action: number | (() => void);
   onCancel: () => void;
-  canCencel: boolean;
+  canCancel: boolean;
 }) {
+  const handleActionClick = () => {    
+    if (typeof action !== "number") {      
+      action();
+    }
+    onCancel();
+  };
+
   return (
     <AlertDialog open={title !== "" || text !== ""}>
       <AlertDialogContent>
@@ -38,16 +45,11 @@ export function AlertDialogComponent({
           <AlertDialogDescription>{text}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          {canCencel && (
+          {canCancel && (
             <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
           )}
-          {typeof action === "function" && (
-            <AlertDialogAction
-              onClick={() => {
-                action();
-                onCancel();
-              }}
-            >
+          {typeof action !== "number" && (
+            <AlertDialogAction onClick={handleActionClick}>
               Continue
             </AlertDialogAction>
           )}
@@ -62,9 +64,9 @@ const AlertContext = createContext(
     title: string,
     text: string,
     action: number | (() => void),
-    canCencel: boolean
+    canCancel: boolean
   ) => {
-    return [title, text, action, canCencel];
+    return [title, text, action, canCancel];
   }
 );
 
@@ -72,20 +74,20 @@ export function AlertDialogProvider({ children }: { children: ReactNode }) {
   const [title, setTitle] = useState<string>("");
   const [text, setText] = useState<string>("");
   const [action, setAction] = useState<number | (() => void)>(0);
-  const [canCencel, setCanCencel] = useState<boolean>(false);
+  const [canCancel, setCanCancel] = useState<boolean>(false);
 
   const onChangeAlert = useCallback(
     (
       title: string,
       text: string,
       action: number | (() => void),
-      canCencel: boolean
+      canCancel: boolean
     ) => {
       setTitle(title);
       setText(text);
-      setAction(action);
-      setCanCencel(canCencel);
-      return [title, text, action, canCencel];
+      setAction(() => action);
+      setCanCancel(canCancel);
+      return [title, text, action, canCancel];
     },
     []
   );
@@ -104,7 +106,7 @@ export function AlertDialogProvider({ children }: { children: ReactNode }) {
           text={text}
           action={action}
           onCancel={onCancel}
-          canCencel={canCencel}
+          canCancel={canCancel}
         />
       )}
       {children}
