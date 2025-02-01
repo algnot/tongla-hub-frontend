@@ -112,7 +112,10 @@ export default function SignUp() {
                 </div>
                 <div className="mt-6 text-center text-sm">
                   I have an account{" "}
-                  <Link href={`/login${redirect ? "?redirect=" + redirect : ""}`} className="underline underline-offset-4">
+                  <Link
+                    href={`/login${redirect ? "?redirect=" + redirect : ""}`}
+                    className="underline underline-offset-4"
+                  >
                     Login
                   </Link>
                 </div>
