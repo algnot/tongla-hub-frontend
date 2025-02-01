@@ -310,6 +310,7 @@ export default function Page({ params }: PageProps) {
           codeChange: value,
           description: questionData?.description,
           title: questionData?.title,
+          stdin: stdin
         })
       );
     }
