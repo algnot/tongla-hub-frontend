@@ -7,13 +7,17 @@ import { useLoadingContext } from "@/components/provider/loading-provider";
 import { useNavigateContext } from "@/components/provider/navigation-provider";
 import TestCaseComponent, { TestCaseProps } from "@/components/test-case";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { useUserData } from "@/hooks/use-user";
 import { BackendClient } from "@/lib/request";
 import { isErrorResponse } from "@/types/payload";
 import { Question } from "@/types/request";
+import { v4 as uuidv4 } from "uuid";
 import { RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { getItem, removeItem, setItem } from "@/lib/storage";
 
 type PageProps = {
   params: Promise<{ problems_id: string[] }>;
@@ -37,6 +41,8 @@ export default function Page({ params }: PageProps) {
   const [activeTab, setActiveTab] = useState<
     "detail" | "customInput" | "testCase" | "yourSubmit"
   >("detail");
+
+  const [isSessionStart, setIsSessionStart] = useState<boolean>(false);
 
   const fetchQuestionData = async (forceReload: boolean) => {
     const { problems_id } = await params;
@@ -65,20 +71,33 @@ export default function Page({ params }: PageProps) {
       ];
     }
     setTestCase(testCaseList);
+    let startCode = "";
     if (response.submit_info.id != 0) {
       if (response.submit_info.status == "PENDING") {
         setTimeout(() => {
           fetchQuestionData(true);
         }, 5000);
       }
+      startCode = response.submit_info.code.replace(/\\n/g, "\n");
       setActiveTab("yourSubmit");
-      setCode(response.submit_info.code.replace(/\\n/g, "\n"));
     } else {
-      setCode(response.start_code.replace(/\\n/g, "\n"));
+      startCode = response.start_code.replace(/\\n/g, "\n");
     }
+    onChangeCode(startCode);
     setQuestionData(response);
     setStdin(response.test_cases[0].input);
     setFullLoading(false);
+
+    const sessionId = getItem("sessionId");
+    if (sessionId) {
+      handleSwitchSession(
+        startCode,
+        response?.title ?? "",
+        response?.description ?? "",
+        response.test_cases[0].input
+      );
+    }
+
     setNavigation(
       [
         {
@@ -155,11 +174,11 @@ export default function Page({ params }: PageProps) {
   };
 
   const onFillAnswer = () => {
-    setCode(questionData?.answer_code ?? "");
+    onChangeCode(questionData?.answer_code ?? "");
   };
 
   const onFillStartCode = () => {
-    setCode(questionData?.start_code ?? "");
+    onChangeCode(questionData?.start_code ?? "");
   };
 
   const onSubmitCode = () => {
@@ -206,6 +225,112 @@ export default function Page({ params }: PageProps) {
     );
   }, []);
 
+  const handleCopy = () => {
+    navigator.clipboard
+      .writeText(window.location.host + "/code-with-friend/" + channelId)
+      .catch((err) => {
+        console.error("Error copying text: ", err);
+      });
+  };
+
+  // web socket module
+  const [ws, setWs] = useState<WebSocket | null>(null);
+  const [channelId, setChannelId] = useState<string>("");
+  const [socketUserId, setSocketUserId] = useState<string>("");
+  const startSession = (
+    initCode: string,
+    title: string,
+    description: string,
+    stdin: string
+  ) => {
+    let channelId = uuidv4();
+    const sessionId = getItem("sessionId");
+    if (sessionId) {
+      channelId = sessionId;
+    } else {
+      setItem("sessionId", channelId);
+    }
+    const socketId = uuidv4();
+    setChannelId(channelId);
+    setSocketUserId(socketId);
+    const socket = new WebSocket(
+      `${process.env.NEXT_PUBLIC_SOCKET_PATH}/${channelId}`
+    );
+
+    socket.onmessage = (event) => {
+      const { codeChange, userId, action } = JSON.parse(event.data);
+      if (userId == socketId) {
+        return;
+      }
+      if (action == "changeCode") {
+        setCode(codeChange);
+      } else if (action == "connected") {
+        socket.send(
+          JSON.stringify({
+            action: "initCode",
+            userId: socketId,
+            codeChange: initCode,
+            description: description,
+            title: title,
+            stdin: stdin,
+          })
+        );
+      }
+    };
+    socket.onerror = () => {
+      setAlert(
+        "Code with friend error :(",
+        "Code with friend is disconnected",
+        0,
+        true
+      );
+    };
+    socket.onclose = () => {
+      setAlert(
+        "Code with friend disconnected",
+        "Code with friend is disconnected",
+        0,
+        true
+      );
+      setChannelId("");
+      setIsSessionStart(false);
+      setSocketUserId("");
+      removeItem("sessionId");
+    };
+    setWs(socket);
+  };
+
+  const onChangeCode = (value: string) => {
+    setCode(value);
+    if (ws) {
+      ws.send(
+        JSON.stringify({
+          action: "changeCode",
+          userId: socketUserId,
+          codeChange: value,
+          description: questionData?.description,
+          title: questionData?.title,
+        })
+      );
+    }
+  };
+
+  const handleSwitchSession = (
+    initCode: string,
+    title: string,
+    description: string,
+    stdin: string
+  ) => {
+    if (!isSessionStart) {
+      startSession(initCode, title, description, stdin);
+    } else {
+      removeItem("sessionId");
+      setChannelId("");
+      ws?.close();
+    }
+    setIsSessionStart((v) => !v);
+  };
+
   return (
     <div className="w-full mx-auto p-4">
       <div className="flex justify-end mb-4 gap-2">
@@ -233,7 +358,44 @@ export default function Page({ params }: PageProps) {
               Reset Code
             </Button>
           </div>
-          <CodeEditor value={code} onChange={(newCode) => setCode(newCode)} />
+          <CodeEditor
+            value={code}
+            onChange={(newCode) => onChangeCode(newCode)}
+          />
+          <div className="border rounded-lg p-4 mt-3">
+            <div className="flex gap-3 items-center">
+              <Switch
+                id="isSessionStart"
+                checked={isSessionStart}
+                onCheckedChange={() =>
+                  handleSwitchSession(
+                    code,
+                    questionData?.title ?? "",
+                    questionData?.description ?? "",
+                    stdin
+                  )
+                }
+              />
+              <div>
+                <div className="text-md">Code with friend</div>
+                <div className="text-sm text-gray-500">
+                  Anyone with the link can edit this code
+                </div>
+              </div>
+            </div>
+            {isSessionStart && (
+              <div className="flex gap-2 items-center mt-3">
+                <Input
+                  disabled
+                  className="flex-grow"
+                  value={
+                    window.location.host + "/code-with-friend/" + channelId
+                  }
+                />
+                <Button onClick={handleCopy}>Copy Link</Button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* right component */}
@@ -386,7 +548,7 @@ export default function Page({ params }: PageProps) {
                 <div className="flex justify-end mt-4">
                   <Button
                     onClick={() => {
-                      setCode(questionData?.submit_info.code ?? "");
+                      onChangeCode(questionData?.submit_info.code ?? "");
                     }}
                     variant="outline"
                   >
