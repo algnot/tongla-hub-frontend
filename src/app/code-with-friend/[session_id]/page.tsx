@@ -21,7 +21,7 @@ export default function Page({ params }: PageProps) {
   const [code, setCode] = useState<string>("");
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
-  const [stdin, setStdin] = useState<string>("");
+  const [stdin, setStdin] = useState<string>(" ");
   const [stdout, setStdout] = useState<string>("PyDev console: starting");
   const [loading, setLoading] = useState<boolean>(false);
 
