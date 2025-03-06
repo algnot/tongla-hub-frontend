@@ -47,7 +47,7 @@ export default function Login() {
       "Login Complete",
       `Welcome back ${response.username} :)`,
       () => {
-        window.location.href = redirect ?? "/dashboard";
+        window.location.href = redirect ?? "/dashboard/problems";
       },
       false
     );
