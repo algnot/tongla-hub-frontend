@@ -33,8 +33,8 @@ export default function Page() {
         columns={[
           { key: "title", label: "Title" },
           { key: "rate", label: "Rate" },
-          { key: "submitted", label: "Submitted" },
-          { key: "created_at", label: "Created at" },
+          { key: "is_submit", label: "is_submit" },
+          { key: "is_passed", label: "is_passed" },
         ]}
         href="/dashboard/problems/"
         navigateKey="id"

@@ -25,8 +25,9 @@ export default function Page() {
           { key: "username", label: "Name" },
           { key: "role", label: "Role" },
         ]}
-        href="/dashboard/admin/users/"
-        navigateKey="uid"
+        // href="/dashboard/admin/users/"
+        // navigateKey="uid"
+        isSearchable
       />
     </div>
   );

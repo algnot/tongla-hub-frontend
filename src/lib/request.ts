@@ -272,7 +272,7 @@ export class BackendClient {
     try {
       const accessToken = getItem("access_token");
       const response = await client.get(
-        `/data/list?limit=${limit}&offset=${offset}&text=${text}&model=question`,
+        `/code/list-question?limit=${limit}&offset=${offset}&text=${text}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,

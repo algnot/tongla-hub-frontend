@@ -26,6 +26,7 @@ export default function Page() {
           { key: "used", label: "Used" },
           { key: "expires_at", label: "Expires at" },
         ]}
+        isSearchable
       />
     </div>
   );

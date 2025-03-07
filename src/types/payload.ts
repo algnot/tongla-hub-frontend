@@ -114,14 +114,14 @@ export interface GetOneTimePasswordResponse {
 }
 
 export interface GetQuestion {
-  commented: number;
-  created_at: string;
   id: number;
-  is_public: boolean;
-  is_system_question: boolean;
+  title: string;
   rate: number;
   submitted: number;
-  title: string;
+  is_submit: boolean;
+  is_passed: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface GetQuestionResponse {

@@ -27,6 +27,7 @@ export default function Page() {
           { key: "template_id", label: "Template ID" },
           { key: "send_at", label: "Send at" },
         ]}
+        isSearchable
       />
     </div>
   );

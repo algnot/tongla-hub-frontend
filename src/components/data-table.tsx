@@ -30,6 +30,7 @@ interface DataTableProps<T> {
   columns?: Array<{ key: keyof T; label: string }>;
   href?: string;
   navigateKey?: keyof T;
+  isSearchable?: boolean;
 }
 
 interface PaginatedResponse<T> {
@@ -42,6 +43,7 @@ export function DataTable<T>({
   columns,
   href,
   navigateKey,
+  isSearchable,
 }: DataTableProps<T>) {
   const setAlert = useAlertContext();
   const [datas, setDatas] = useState<T[][]>([]);
@@ -104,15 +106,15 @@ export function DataTable<T>({
   };
 
   const onNavigate = (data: T) => {
-    if(href === undefined) {
-      return
+    if (href === undefined) {
+      return;
     }
-    if(navigateKey === undefined) {
-      window.location.href = `${href}`
-      return
+    if (navigateKey === undefined) {
+      window.location.href = `${href}`;
+      return;
     }
-    window.location.href = `${href}${(data[navigateKey] ?? "") as string}`
-  }
+    window.location.href = `${href}${(data[navigateKey] ?? "") as string}`;
+  };
   const columnNames =
     columns ||
     Object.keys(datas[0]?.[0] || {}).map((key) => ({ key, label: key }));
@@ -120,12 +122,16 @@ export function DataTable<T>({
   return (
     <div className="w-full">
       <div className="flex justify-between items-center py-4">
-        <Input
-          placeholder="filter here"
-          className="max-w-sm"
-          value={filter}
-          onChange={(e) => onFilter(e.target.value)}
-        />
+        {isSearchable ? (
+          <Input
+            placeholder="filter here"
+            className="max-w-sm"
+            value={filter}
+            onChange={(e) => onFilter(e.target.value)}
+          />
+        ) : (
+          <div></div>
+        )}
         <div className="flex space-x-4 items-center">
           <Select
             value={limit.toString()}
@@ -183,10 +189,10 @@ export function DataTable<T>({
                         data[key as keyof T] ? (
                           <span className="icon-true">✅</span>
                         ) : (
-                          <span className="icon-false">❌</span> 
+                          <span className="icon-false">❌</span>
                         )
                       ) : (
-                        data[key as keyof T] as ReactNode
+                        (data[key as keyof T] as ReactNode)
                       )}
                     </TableCell>
                   ))}
