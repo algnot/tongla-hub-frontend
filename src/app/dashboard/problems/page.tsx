@@ -3,7 +3,6 @@ import { useLoadingContext } from "@/components/provider/loading-provider";
 import { useNavigateContext } from "@/components/provider/navigation-provider";
 import { useEffect, useState } from "react";
 import { BackendClient } from "@/lib/request";
-import { Star, CircleSlash, CircleX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -42,7 +41,8 @@ export default function Page() {
     setLoading(false);
     setNavigation([], "All Problems");
     fetchData();
-  }, [setLoading, setNavigation]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="container mx-auto py-10 px-5">
