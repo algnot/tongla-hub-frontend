@@ -37,18 +37,6 @@ const navUser = [
       }
     ],
   },
-  // {
-  //   title: "Settings",
-  //   url: "#",
-  //   icon: Settings2,
-  //   isActive: true,
-  //   items: [
-  //     {
-  //       title: "General",
-  //       url: "#",
-  //     }
-  //   ],
-  // },
 ];
 
 const navAdmin = [
@@ -56,7 +44,7 @@ const navAdmin = [
     title: "Users",
     url: "/dashboard/users",
     icon: User2,
-    isActive: false,
+    isActive: true,
     items: [
       {
         title: "Users",
@@ -68,8 +56,12 @@ const navAdmin = [
     title: "System",
     url: "/dashboard/users",
     icon: SquareTerminal,
-    isActive: false,
+    isActive: true,
     items: [
+      {
+        title: "Problems",
+        url: "/dashboard/admin/problem",
+      },
       {
         title: "Email",
         url: "/dashboard/admin/email",

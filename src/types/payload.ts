@@ -157,3 +157,19 @@ export interface UpdateQuestionRequest {
   is_public: boolean;
   test_cases: QuestionTestCaseRequest[];
 }
+
+export interface GetQuestionAdmin {
+  commented: number;
+  created_at: string;
+  id: number;
+  is_public: boolean;
+  is_system_question: boolean;
+  rate: number;
+  submitted: number;
+  title: string;
+}
+
+export interface GetQuestionAdminResponse {
+  next: number;
+  datas: GetQuestionAdmin[];
+}
