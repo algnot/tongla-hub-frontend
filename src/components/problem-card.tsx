@@ -39,14 +39,14 @@ export default function ProblemCard({ problem }: ProblemCardProps) {
             </div>
           ) : (
             <div className="flex border rounded-xl border-red-600 text-red-600 text-sm justify-center items-center gap-1 w-fit px-2">
-              <CircleSlash className="text-red-600" width={18} />
+              <CircleX className="text-red-600" width={18} />
               Not submit
             </div>
           )}
 
           {problem.is_passed ? (
             <div className="flex border rounded-xl border-green-600 text-green-600 text-sm justify-center items-center gap-1 w-fit px-2">
-              <CircleX className="text-green-600" width={18} />
+              <CircleSlash className="text-green-600" width={18} />
               Correct
             </div>
           ) : (
