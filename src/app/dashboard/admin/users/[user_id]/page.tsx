@@ -150,7 +150,6 @@ export default function Page({ params }: PageProps) {
               type="text"
               placeholder="image_url"
               defaultValue={defaultValue?.image_url}
-              required
             />
           </div>
 
