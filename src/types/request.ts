@@ -94,6 +94,7 @@ export interface GetUserByIdResponse {
   uid: number;
   created_at: string;
   updated_at: string;
+  score: string;
 }
 
 export interface UpdateUserByIdRequest {

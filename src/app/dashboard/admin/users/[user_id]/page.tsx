@@ -154,6 +154,17 @@ export default function Page({ params }: PageProps) {
           </div>
 
           <div className="grid gap-2">
+            <Label htmlFor="score">Score</Label>
+            <Input
+              id="score"
+              placeholder="Score"
+              type="number"
+              defaultValue={defaultValue?.score}
+              disabled
+            />
+          </div>
+
+          <div className="grid gap-2">
             <Label htmlFor="created_at">Created At</Label>
             <Input
               id="created_at"
