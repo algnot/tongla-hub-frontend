@@ -20,9 +20,11 @@ import { getItem, removeItem, setItem } from "./storage";
 import {
   ExecuteCodeRequest,
   ExecuteCodeResponse,
+  GetUserByIdResponse,
   Question,
   SubmitCodeRequest,
   SubmitCodeResponse,
+  UpdateUserByIdRequest,
   UserType,
 } from "@/types/request";
 
@@ -383,6 +385,34 @@ export class BackendClient {
     try {
       const accessToken = getItem("access_token");
       const response = await client.post(`/code/submit`, payload, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      return response.data;
+    } catch (e) {
+      return handlerError(e);
+    }
+  }
+
+  async getUserById(id: string): Promise<GetUserByIdResponse | ErrorResponse> {
+    try {
+      const accessToken = getItem("access_token");
+      const response = await client.get(`/user/${id}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      return response.data;
+    } catch (e) {
+      return handlerError(e);
+    }
+  }
+
+  async updateUserById(id: string, payload: UpdateUserByIdRequest): Promise<GetUserByIdResponse | ErrorResponse> {
+    try {
+      const accessToken = getItem("access_token");
+      const response = await client.put(`/user/${id}`, payload, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },

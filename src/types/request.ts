@@ -85,3 +85,20 @@ export interface SubmitCodeResponse {
   id: number;
   status: "PENDING" | "FINISH";
 }
+
+export interface GetUserByIdResponse {
+  email: string;
+  username: string;
+  role: "USER" | "ADMIN";
+  image_url: string;
+  uid: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UpdateUserByIdRequest {
+  email: string;
+  username: string;
+  role: "USER" | "ADMIN";
+  image_url: string;
+}

@@ -12,7 +12,7 @@ export default function Page() {
 
   useEffect(() => {
     setLoading(false);
-    setNavigation([], "Users");
+    setNavigation([], "All Users");
   }, [setLoading, setNavigation]);
 
   return (
@@ -25,8 +25,8 @@ export default function Page() {
           { key: "username", label: "Name" },
           { key: "role", label: "Role" },
         ]}
-        // href="/dashboard/admin/users/"
-        // navigateKey="uid"
+        href="/dashboard/admin/users/"
+        navigateKey="uid"
         isSearchable
       />
     </div>
