@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 import { useAlertContext } from "@/components/provider/alert-provider";
 import { useLoadingContext } from "@/components/provider/loading-provider";
@@ -8,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { BackendClient } from "@/lib/request";
 import { isErrorResponse } from "@/types/payload";
 import { GetUserByIdResponse } from "@/types/request";
+import { User } from "lucide-react";
 import React, { FormEvent, useEffect, useRef, useState } from "react";
 
 type PageProps = {
@@ -95,6 +97,23 @@ export default function Page({ params }: PageProps) {
             <Button type="submit" className="w-fit">
               save
             </Button>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="profile">Profile Picture</Label>
+            <label
+              htmlFor="file-upload"
+              className="w-40 h-40 flex items-center justify-center bg-gray-200 border"
+            >
+              {defaultValue?.image_url ? (
+                <img
+                  src={defaultValue?.image_url}
+                  alt="profile"
+                  className="w-40 h-40 object-cover"
+                />
+              ) : (
+                <User className="w-12 h-12 text-gray-500" />
+              )}
+            </label>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="uid">uid</Label>
