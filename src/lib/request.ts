@@ -25,6 +25,7 @@ import {
   SubmitCodeRequest,
   SubmitCodeResponse,
   UpdateUserByIdRequest,
+  UploadFileResponse,
   UserType,
 } from "@/types/request";
 
@@ -416,6 +417,18 @@ export class BackendClient {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
+      });
+      return response.data;
+    } catch (e) {
+      return handlerError(e);
+    }
+  }
+
+  async uploadFile(fileType: string, fileContent: string): Promise<UploadFileResponse | ErrorResponse> {
+    try {
+      const response = await client.post("/uploader/upload", {
+        content_type: fileType,
+        content: fileContent
       });
       return response.data;
     } catch (e) {

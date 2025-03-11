@@ -99,7 +99,11 @@ export interface GetUserByIdResponse {
 
 export interface UpdateUserByIdRequest {
   email?: string;
-  username: string;
+  username?: string;
   role?: "USER" | "ADMIN";
   image_url?: string;
+}
+
+export interface UploadFileResponse {
+  url: string;
 }

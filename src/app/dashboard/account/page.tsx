@@ -47,14 +47,43 @@ export default function Page() {
       return;
     }
 
-    setAlert(
-      "Updated",
-      "Your profile is updated :)",
-      () => {
-        window.location.reload();
-      },
-      false
-    );
+    window.location.reload();
+  };
+
+  const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64String = (reader.result as string).split(",")[1];      
+      const response = await client.uploadFile(
+        file.type,
+        base64String
+      );
+
+      if (isErrorResponse(response)) {
+        setAlert("Error", response.message, 0, true);
+        setLoading(false);
+        return;
+      }
+
+      const updateResponse = await client.updateUserById(
+        userData?.uid.toString() ?? "",
+        {
+          image_url: response.url,
+        }
+      );
+
+      if (isErrorResponse(updateResponse)) {
+        setAlert("Error", updateResponse.message, 0, true);
+        setLoading(false);
+        return;
+      }
+
+      window.location.reload();
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -63,17 +92,27 @@ export default function Page() {
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-2 cursor-pointer">
             <Label htmlFor="profile">Profile Picture</Label>
-            {userData?.image_url ? (
-              <img
-                src={userData.image_url}
-                alt="profile"
-                className="w-40 h-40 object-cover"
-              />
-            ) : (
-              <div className="w-40 h-40 flex items-center justify-center bg-gray-200 border">
+            <label
+              htmlFor="file-upload"
+              className="w-40 h-40 flex items-center justify-center bg-gray-200 border cursor-pointer"
+            >
+              {userData?.image_url ? (
+                <img
+                  src={userData?.image_url}
+                  alt="profile"
+                  className="w-40 h-40 object-cover"
+                />
+              ) : (
                 <User className="w-12 h-12 text-gray-500" />
-              </div>
-            )}
+              )}
+            </label>
+            <Input
+              id="file-upload"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={onFileChange}
+            />
           </div>
 
           <div className="grid gap-2">
@@ -100,7 +139,11 @@ export default function Page() {
           </div>
 
           <div className="flex justify-end">
-            <Button type="submit" className="w-fit" disabled={userData?.uid == undefined}>
+            <Button
+              type="submit"
+              className="w-fit"
+              disabled={userData?.uid == undefined}
+            >
               save
             </Button>
           </div>
