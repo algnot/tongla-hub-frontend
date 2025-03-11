@@ -100,9 +100,13 @@ export default function Page() {
         </div>
       </div>
       <div className="mt-5">
-        {problems.map((value) => {
-          return <ProblemCard key={value.id} problem={value} />;
-        })}
+        {problems.length > 0 ? (
+          problems.map((value) => (
+            <ProblemCard key={value.id} problem={value} />
+          ))
+        ) : (
+          <p className="text-center text-gray-500">No problems found.</p>
+        )}
       </div>
     </div>
   );
