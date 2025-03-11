@@ -14,6 +14,7 @@ import {
 import { GetQuestion, isErrorResponse } from "@/types/payload";
 import ProblemCard from "@/components/problem-card";
 import { useAlertContext } from "@/components/provider/alert-provider";
+import { useSearchParams, useRouter } from "next/navigation";
 
 type RatingType = "all" | "1" | "2" | "3" | "4" | "5";
 type StateType = "all" | "not_submitted" | "submitted";
@@ -23,12 +24,21 @@ export default function Page() {
   const setLoading = useLoadingContext();
   const setNavigation = useNavigateContext();
   const setAlert = useAlertContext();
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
-  const [rating, setRating] = useState<RatingType>("all");
-  const [state, setState] = useState<StateType>("all");
   const [problems, setProblems] = useState<GetQuestion[]>([]);
 
-  const fetchData = async (rating: RatingType, state: StateType) => {
+  const rating = (searchParams.get("rating") as RatingType) || "all";
+  const state = (searchParams.get("state") as StateType) || "all";
+
+  const updateQueryParam = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set(key, value);
+    router.push(`?${params.toString()}`, { scroll: false });
+  };
+
+  const fetchData = async () => {
     const response = await client.getQuestion(100, 0, state, rating);
 
     if (isErrorResponse(response)) {
@@ -43,7 +53,7 @@ export default function Page() {
   useEffect(() => {
     setLoading(false);
     setNavigation([], "All Problems");
-    fetchData(rating, state);
+    fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rating, state]);
 
@@ -53,29 +63,27 @@ export default function Page() {
         <div className="flex gap-2">
           <Button
             variant={state == "all" ? "default" : "outline"}
-            onClick={() => setState("all")}
+            onClick={() => updateQueryParam("state", "all")}
           >
             All Problems
           </Button>
           <Button
             variant={state == "not_submitted" ? "default" : "outline"}
-            onClick={() => setState("not_submitted")}
+            onClick={() => updateQueryParam("state", "not_submitted")}
           >
-            Not Sumbit
+            Not Submit
           </Button>
           <Button
             variant={state == "submitted" ? "default" : "outline"}
-            onClick={() => setState("submitted")}
+            onClick={() => updateQueryParam("state", "submitted")}
           >
             Submitted
           </Button>
         </div>
         <div>
           <Select
-            value={rating.toString()}
-            onValueChange={(value) =>
-              setRating(value as RatingType)
-            }
+            value={rating}
+            onValueChange={(value) => updateQueryParam("rating", value)}
           >
             <SelectTrigger className="max-w-xs">
               <SelectValue placeholder="Rating" />
