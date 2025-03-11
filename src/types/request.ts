@@ -98,8 +98,8 @@ export interface GetUserByIdResponse {
 }
 
 export interface UpdateUserByIdRequest {
-  email: string;
+  email?: string;
   username: string;
-  role: "USER" | "ADMIN";
-  image_url: string;
+  role?: "USER" | "ADMIN";
+  image_url?: string;
 }

@@ -107,7 +107,7 @@ export default function Page({ params }: PageProps) {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="start_date">username</Label>
+            <Label htmlFor="username">username</Label>
             <Input
               id="username"
               name="username"
@@ -119,7 +119,7 @@ export default function Page({ params }: PageProps) {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="start_date">email</Label>
+            <Label htmlFor="email">email</Label>
             <Input
               id="email"
               name="email"
@@ -143,7 +143,7 @@ export default function Page({ params }: PageProps) {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="start_date">image_url</Label>
+            <Label htmlFor="image_url">image_url</Label>
             <Input
               id="image_url"
               name="image_url"

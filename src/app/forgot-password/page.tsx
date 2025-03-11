@@ -109,7 +109,7 @@ export default function Login() {
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">Forgot password</CardTitle>
+              <CardTitle className="text-2xl">Reset password</CardTitle>
               <CardDescription>
                 Enter your email below to reset your password
               </CardDescription>

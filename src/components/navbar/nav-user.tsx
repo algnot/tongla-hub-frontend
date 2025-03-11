@@ -1,5 +1,4 @@
 "use client"
-
 import {
   BadgeCheck,
   Bell,
@@ -74,11 +73,11 @@ export function NavUser() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => window.location.href = "/dashboard/account"}>
                 <BadgeCheck />
                 Account
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => window.location.href = "/dashboard/notification"}>
                 <Bell />
                 Notifications
               </DropdownMenuItem>
