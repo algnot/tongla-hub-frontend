@@ -300,11 +300,13 @@ export class BackendClient {
   async getQuestion(
     limit: number,
     offset: number | "",
+    mode: "all" | "submitted" | "not_submitted",
+    rate: "all" | "1" | "2" | "3" | "4" | "5",
   ): Promise<GetQuestionResponse | ErrorResponse> {
     try {
       const accessToken = getItem("access_token");
       const response = await client.get(
-        `/code/list-question?limit=${limit}&offset=${offset}`,
+        `/code/list-question?limit=${limit}&offset=${offset}&mode=${mode}&rate=${rate}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -318,7 +320,7 @@ export class BackendClient {
         const refreshToken = getItem("refresh_token");
         if (refreshToken) {
           await this.generateNewAccessToken();
-          return this.getQuestion(limit, offset);
+          return this.getQuestion(limit, offset, mode, rate);
         }
       }
       return handlerError(e);
