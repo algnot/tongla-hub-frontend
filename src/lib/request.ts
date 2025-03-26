@@ -50,18 +50,23 @@ const handlerError = (error: unknown): ErrorResponse => {
   }
 };
 
-const client: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BACKEND_PATH,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
 export class BackendClient {
+  private readonly client: AxiosInstance;
+
+  constructor() {
+    this.client = axios.create({
+      baseURL: process.env.NEXT_PUBLIC_BACKEND_PATH,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${getItem("access_token")}`,
+      },
+    });
+  }
+
   async getUserInfo(): Promise<UserType | ErrorResponse> {
     try {
       const accessToken = getItem("access_token");
-      const response = await client.get("/auth/me", {
+      const response = await this.client.get("/auth/me", {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -91,7 +96,7 @@ export class BackendClient {
   async generateNewAccessToken(): Promise<ErrorResponse | void> {
     try {
       const refreshToken = getItem("refresh_token");
-      const response = await client.get("/auth/generate-access-token", {
+      const response = await this.client.get("/auth/generate-access-token", {
         headers: {
           Authorization: `Bearer ${refreshToken}`,
         },
@@ -111,7 +116,7 @@ export class BackendClient {
     payload: SignUpRequest
   ): Promise<SignUpResponse | ErrorResponse> {
     try {
-      const response = await client.post("/auth/sign-up", payload);
+      const response = await this.client.post("/auth/sign-up", payload);
       setItem("access_token", response.data.access_token);
       setItem("refresh_token", response.data.refresh_token);
       await this.getUserInfo();
@@ -123,7 +128,7 @@ export class BackendClient {
 
   async login(payload: LoginRequest): Promise<LoginResponse | ErrorResponse> {
     try {
-      const response = await client.post("/auth/login", payload);
+      const response = await this.client.post("/auth/login", payload);
       setItem("access_token", response.data.access_token);
       setItem("refresh_token", response.data.refresh_token);
       await this.getUserInfo();
@@ -137,7 +142,7 @@ export class BackendClient {
     email: string
   ): Promise<ResetPasswordGetOtpResponse | ErrorResponse> {
     try {
-      const response = await client.post("/auth/reset-password-otp", {
+      const response = await this.client.post("/auth/reset-password-otp", {
         email,
       });
       return response.data;
@@ -150,7 +155,7 @@ export class BackendClient {
     payload: ResetPasswordGetTokenRequest
   ): Promise<ResetPasswordGetTokenResponse | ErrorResponse> {
     try {
-      const response = await client.post("/auth/reset-password-token", payload);
+      const response = await this.client.post("/auth/reset-password-token", payload);
       return response.data;
     } catch (e) {
       return handlerError(e);
@@ -162,7 +167,7 @@ export class BackendClient {
     token: string
   ): Promise<UserType | ErrorResponse> {
     try {
-      const response = await client.post(
+      const response = await this.client.post(
         "/auth/reset-password",
         {
           password,
@@ -188,7 +193,7 @@ export class BackendClient {
   ): Promise<GetUserResponse | ErrorResponse> {
     try {
       const accessToken = getItem("access_token");
-      const response = await client.get(
+      const response = await this.client.get(
         `/data/list?limit=${limit}&offset=${offset}&text=${text}&model=user`,
         {
           headers: {
@@ -198,14 +203,6 @@ export class BackendClient {
       );
       return response.data;
     } catch (e) {
-      if (axios.isAxiosError(e) && e.status === 403) {
-        removeItem("access_token");
-        const refreshToken = getItem("refresh_token");
-        if (refreshToken) {
-          await this.generateNewAccessToken();
-          return this.getUser(limit, offset, text);
-        }
-      }
       return handlerError(e);
     }
   }
@@ -217,7 +214,7 @@ export class BackendClient {
   ): Promise<GetEmailSenderResponse | ErrorResponse> {
     try {
       const accessToken = getItem("access_token");
-      const response = await client.get(
+      const response = await this.client.get(
         `/data/list?limit=${limit}&offset=${offset}&text=${text}&model=email`,
         {
           headers: {
@@ -227,14 +224,6 @@ export class BackendClient {
       );
       return response.data;
     } catch (e) {
-      if (axios.isAxiosError(e) && e.status === 403) {
-        removeItem("access_token");
-        const refreshToken = getItem("refresh_token");
-        if (refreshToken) {
-          await this.generateNewAccessToken();
-          return this.getEmailSender(limit, offset, text);
-        }
-      }
       return handlerError(e);
     }
   }
@@ -246,7 +235,7 @@ export class BackendClient {
   ): Promise<GetOneTimePasswordResponse | ErrorResponse> {
     try {
       const accessToken = getItem("access_token");
-      const response = await client.get(
+      const response = await this.client.get(
         `/data/list?limit=${limit}&offset=${offset}&text=${text}&model=otp`,
         {
           headers: {
@@ -256,14 +245,6 @@ export class BackendClient {
       );
       return response.data;
     } catch (e) {
-      if (axios.isAxiosError(e) && e.status === 403) {
-        removeItem("access_token");
-        const refreshToken = getItem("refresh_token");
-        if (refreshToken) {
-          await this.generateNewAccessToken();
-          return this.getOneTimePassword(limit, offset, text);
-        }
-      }
       return handlerError(e);
     }
   }
@@ -275,7 +256,7 @@ export class BackendClient {
   ): Promise<GetQuestionAdminResponse | ErrorResponse> {
     try {
       const accessToken = getItem("access_token");
-      const response = await client.get(
+      const response = await this.client.get(
         `/data/list?limit=${limit}&offset=${offset}&text=${text}&model=question`,
         {
           headers: {
@@ -285,14 +266,6 @@ export class BackendClient {
       );
       return response.data;
     } catch (e) {
-      if (axios.isAxiosError(e) && e.status === 403) {
-        removeItem("access_token");
-        const refreshToken = getItem("refresh_token");
-        if (refreshToken) {
-          await this.generateNewAccessToken();
-          return this.getQuestionAdmin(limit, offset, text);
-        }
-      }
       return handlerError(e);
     }
   }
@@ -305,7 +278,7 @@ export class BackendClient {
   ): Promise<GetQuestionResponse | ErrorResponse> {
     try {
       const accessToken = getItem("access_token");
-      const response = await client.get(
+      const response = await this.client.get(
         `/code/list-question?limit=${limit}&offset=${offset}&mode=${mode}&rate=${rate}`,
         {
           headers: {
@@ -315,14 +288,6 @@ export class BackendClient {
       );
       return response.data;
     } catch (e) {
-      if (axios.isAxiosError(e) && e.status === 403) {
-        removeItem("access_token");
-        const refreshToken = getItem("refresh_token");
-        if (refreshToken) {
-          await this.generateNewAccessToken();
-          return this.getQuestion(limit, offset, mode, rate);
-        }
-      }
       return handlerError(e);
     }
   }
@@ -331,7 +296,7 @@ export class BackendClient {
     payload: ExecuteCodeRequest
   ): Promise<ExecuteCodeResponse | ErrorResponse> {
     try {
-      const response = await client.post("/code/execute", payload);
+      const response = await this.client.post("/code/execute", payload);
       return response.data;
     } catch (e) {
       return handlerError(e);
@@ -341,7 +306,7 @@ export class BackendClient {
   async getQuestionById(id: string): Promise<Question | ErrorResponse> {
     try {
       const accessToken = getItem("access_token");
-      const response = await client.get(`/code/get-question-by-id?id=${id}`, {
+      const response = await this.client.get(`/code/get-question-by-id?id=${id}`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -357,7 +322,7 @@ export class BackendClient {
   ): Promise<Question | ErrorResponse> {
     try {
       const accessToken = getItem("access_token");
-      const response = await client.post(`/code/add-question`, payload, {
+      const response = await this.client.post(`/code/add-question`, payload, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -373,7 +338,7 @@ export class BackendClient {
   ): Promise<Question | ErrorResponse> {
     try {
       const accessToken = getItem("access_token");
-      const response = await client.put(`/code/update-question`, payload, {
+      const response = await this.client.put(`/code/update-question`, payload, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -387,7 +352,7 @@ export class BackendClient {
   async submitCode(payload: SubmitCodeRequest): Promise<SubmitCodeResponse | ErrorResponse> {
     try {
       const accessToken = getItem("access_token");
-      const response = await client.post(`/code/submit`, payload, {
+      const response = await this.client.post(`/code/submit`, payload, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -401,7 +366,7 @@ export class BackendClient {
   async getUserById(id: string): Promise<GetUserByIdResponse | ErrorResponse> {
     try {
       const accessToken = getItem("access_token");
-      const response = await client.get(`/user/${id}`, {
+      const response = await this.client.get(`/user/${id}`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -415,7 +380,7 @@ export class BackendClient {
   async updateUserById(id: string, payload: UpdateUserByIdRequest): Promise<GetUserByIdResponse | ErrorResponse> {
     try {
       const accessToken = getItem("access_token");
-      const response = await client.put(`/user/${id}`, payload, {
+      const response = await this.client.put(`/user/${id}`, payload, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -428,7 +393,7 @@ export class BackendClient {
 
   async uploadFile(fileType: string, fileContent: string): Promise<UploadFileResponse | ErrorResponse> {
     try {
-      const response = await client.post("/uploader/upload", {
+      const response = await this.client.post("/uploader/upload", {
         content_type: fileType,
         content: fileContent
       });

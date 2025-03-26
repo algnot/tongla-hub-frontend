@@ -29,7 +29,7 @@ export default function Page() {
         </div>
       )}
       <DataTable
-        fetchData={client.getQuestionAdmin}
+        fetchData={(limit, offset, text) => client.getQuestionAdmin(limit, offset, text)}
         columns={[
           { key: "title", label: "title" },
           { key: "rate", label: "rate" },

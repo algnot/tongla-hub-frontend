@@ -18,7 +18,7 @@ export default function Page() {
   return (
     <div className="container mx-auto py-10 px-5">
       <DataTable
-        fetchData={client.getEmailSender}
+        fetchData={(limit, offset, text) => client.getEmailSender(limit, offset, text)}
         columns={[
           { key: "id", label: "ID" },
           { key: "to_email", label: "Email" },

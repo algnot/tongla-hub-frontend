@@ -18,7 +18,9 @@ export default function Page() {
   return (
     <div className="container mx-auto py-10 px-5">
       <DataTable
-        fetchData={client.getOneTimePassword}
+        fetchData={(limit, offset, text) =>
+          client.getOneTimePassword(limit, offset, text)
+        }
         columns={[
           { key: "id", label: "ID" },
           { key: "ref", label: "Ref" },

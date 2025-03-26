@@ -1,5 +1,5 @@
 
-export const setItem = (key:string, value:string) => {
+export const setItem = (key: string, value: string) => {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
@@ -7,12 +7,15 @@ export const setItem = (key:string, value:string) => {
   }
 };
 
-export const getItem = (key:string) => {
+export const getItem = (key: string) => {
+  if (typeof window === "undefined") {
+    return null;
+  }
   try {
-    const value = window.localStorage.getItem(key);
-    return value != null ? JSON.parse(value) : "";
+    const value = localStorage.getItem(key);
+    return value !== null ? JSON.parse(value) : "";
   } catch (error) {
-    console.error('Error getting item:', error);
+    console.error("Error getting item:", error);
     return null;
   }
 };
