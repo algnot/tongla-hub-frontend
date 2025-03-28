@@ -10,6 +10,7 @@ import { BackendClient } from "@/lib/request";
 import { isErrorResponse } from "@/types/payload";
 import { GetUserByIdResponse } from "@/types/request";
 import { User } from "lucide-react";
+import Link from "next/link";
 import React, { FormEvent, useEffect, useRef, useState } from "react";
 
 type PageProps = {
@@ -23,7 +24,34 @@ export default function Page({ params }: PageProps) {
   const client = new BackendClient();
 
   const [defaultValue, setDefaultValue] = useState<GetUserByIdResponse>();
+  const [isCoding, setIsCoding] = useState<boolean>(false);
   const formRef = useRef<HTMLFormElement | null>(null);
+
+  const checkSocketConnect = async (username: string, uid: string) => {
+    const socket = new WebSocket(
+      `${process.env.NEXT_PUBLIC_SOCKET_PATH}/${username}-${uid}`
+    );
+
+    socket.onmessage = (event) => {
+      const { action } = JSON.parse(event.data);
+      if (action == "initCode") {
+        setIsCoding(true);
+      }
+    };
+
+    socket.onclose = () => {
+      setIsCoding(false);
+    };
+
+    socket.onopen = () => {
+      socket.send(
+        JSON.stringify({
+          action: "connected",
+          userId: 0,
+        })
+      );
+    };
+  };
 
   const fetchData = async () => {
     const { user_id } = await params;
@@ -35,6 +63,8 @@ export default function Page({ params }: PageProps) {
       setLoading(false);
       return;
     }
+
+    checkSocketConnect(response.username, response.uid.toString());
 
     setDefaultValue(response);
     setNavigation(
@@ -93,10 +123,20 @@ export default function Page({ params }: PageProps) {
     <div className="m-6">
       <form className="p-6 border rounded-lg" ref={formRef} onSubmit={onSubmit}>
         <div className="flex flex-col gap-6">
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
             <Button type="submit" className="w-fit">
               save
             </Button>
+            {isCoding && (
+              <Link
+                href={`/code-with-friend/${defaultValue?.username}-${defaultValue?.uid}`}
+                target="_blank"
+              >
+                <Button type="button" className="w-fit">
+                  Code with {defaultValue?.username}
+                </Button>
+              </Link>
+            )}
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="profile">Profile Picture</Label>

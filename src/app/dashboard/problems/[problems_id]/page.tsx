@@ -98,6 +98,13 @@ export default function Page({ params }: PageProps) {
       );
     }
 
+    startInitSession(
+      startCode,
+      response?.title ?? "",
+      response?.description ?? "",
+      response.test_cases[0].input
+    );
+
     setNavigation(
       [
         {
@@ -223,7 +230,16 @@ export default function Page({ params }: PageProps) {
       ],
       ""
     );
-  }, []);
+  }, [problemId]);
+
+  useEffect(() => {
+    startInitSession(
+      code,
+      questionData?.title ?? "",
+      questionData?.description ?? "",
+      stdin
+    );
+  }, [userData]);
 
   const handleCopy = () => {
     navigator.clipboard
@@ -235,6 +251,7 @@ export default function Page({ params }: PageProps) {
 
   // web socket module
   const [ws, setWs] = useState<WebSocket | null>(null);
+  const [ws2, setWs2] = useState<WebSocket | null>(null);
   const [channelId, setChannelId] = useState<string>("");
   const [socketUserId, setSocketUserId] = useState<string>("");
   const startSession = (
@@ -300,21 +317,85 @@ export default function Page({ params }: PageProps) {
     setWs(socket);
   };
 
+  const startInitSession = (
+    initCode: string,
+    title: string,
+    description: string,
+    stdin: string
+  ) => {
+    const channelId = `${userData?.username}-${userData?.uid}`;
+
+    if (!channelId || !userData?.username) {
+      return;
+    }
+
+    const socketId = uuidv4();
+    const socket = new WebSocket(
+      `${process.env.NEXT_PUBLIC_SOCKET_PATH}/${channelId}`
+    );
+
+    socket.onmessage = (event) => {
+      const { codeChange, userId, action } = JSON.parse(event.data);
+      if (userId == socketId) {
+        return;
+      }
+      if (action == "changeCode") {
+        setCode(codeChange);
+      } else if (action == "connected") {
+        socket.send(
+          JSON.stringify({
+            action: "initCode",
+            userId: socketId,
+            codeChange: initCode,
+            description: description,
+            title: title,
+            stdin: stdin,
+          })
+        );
+      }
+    };
+    setWs2(socket);
+  };
+
   const onChangeCode = (value: string) => {
     setCode(value);
-    if (ws) {
+  };
+
+  useEffect(() => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(
         JSON.stringify({
           action: "changeCode",
           userId: socketUserId,
-          codeChange: value,
+          codeChange: code,
           description: questionData?.description,
           title: questionData?.title,
-          stdin: stdin
+          stdin: stdin,
         })
       );
     }
-  };
+
+    if (ws2 && ws2.readyState === WebSocket.OPEN) {
+      ws2.send(
+        JSON.stringify({
+          action: "changeCode",
+          userId: socketUserId,
+          codeChange: code,
+          description: questionData?.description,
+          title: questionData?.title,
+          stdin: stdin,
+        })
+      );
+    }
+  }, [
+    code,
+    ws,
+    ws2,
+    questionData?.description,
+    questionData?.title,
+    stdin,
+    socketUserId,
+  ]);
 
   const handleSwitchSession = (
     initCode: string,
