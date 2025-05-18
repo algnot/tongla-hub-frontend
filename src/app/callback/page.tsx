@@ -2,20 +2,27 @@
 "use client";
 import React, { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { OpenIdClient } from "@/lib/open_id";
+import { useHelperContext } from "@/components/provider/helper-provider";
+import { isErrorResponse } from "@/types/payload";
 export default function Page() {
   const searchParams = useSearchParams();
-  const code = searchParams.get("code");
-  const openIdClient = new OpenIdClient();
+  const { backendClient } = useHelperContext()();
+  const code = searchParams.get("code") ?? "";
   useEffect(() => {
     getUserInfo();
   }, []);
 
   const getUserInfo = async () => {
-    const token = await openIdClient.getToken(code ?? "");
-    const userData = await openIdClient.getUserInfo(token.id_token);
-    console.log(userData);
+    const response = await backendClient.getOpenidToken({
+      code: code,
+    });
+
+    if (isErrorResponse(response)) {
+      return;
+    }
+
+    window.location.href = "/dashboard/problems";
   };
-  
+
   return <div>This feature is implementing..</div>;
 }

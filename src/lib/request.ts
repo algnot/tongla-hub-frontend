@@ -20,6 +20,7 @@ import { getItem, removeItem, setItem } from "./storage";
 import {
   ExecuteCodeRequest,
   ExecuteCodeResponse,
+  GetOpenidTokenRequest,
   GetUserByIdResponse,
   Question,
   SubmitCodeRequest,
@@ -364,6 +365,17 @@ export class BackendClient {
         content_type: fileType,
         content: fileContent
       });
+      return response.data;
+    } catch (e) {
+      return handlerError(e, this.setAlert);
+    }
+  }
+
+  async getOpenidToken(payload: GetOpenidTokenRequest): Promise<LoginResponse | ErrorResponse> {
+    try {
+      const response = await this.client.post("/auth/get-openid-token", payload);
+      setItem("access_token", response.data.access_token);
+      setItem("refresh_token", response.data.refresh_token);
       return response.data;
     } catch (e) {
       return handlerError(e, this.setAlert);

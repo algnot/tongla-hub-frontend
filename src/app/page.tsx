@@ -4,11 +4,7 @@ import { useEffect } from "react";
 
 export default function RedirectPage() {
   useEffect(() => {
-    // if (process.env.NODE_ENV === "development") {
     window.location.href = "/dashboard";
-    // } else {
-    //   window.location.href = "https://tongla.dev/";
-    // }
   }, []);
 
   return (

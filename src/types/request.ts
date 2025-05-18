@@ -139,3 +139,7 @@ export interface OpenIdGetUserInfoResponse {
   gender: string;
   is_verified: boolean;
 }
+
+export interface GetOpenidTokenRequest {
+  code: string;
+}
