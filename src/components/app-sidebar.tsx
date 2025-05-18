@@ -1,7 +1,6 @@
 "use client";
 import * as React from "react";
 import { Code2, SquareTerminal, User2 } from "lucide-react";
-
 import { NavMain } from "@/components/navbar/nav-main";
 import { NavUser } from "@/components/navbar/nav-user";
 import {
@@ -10,7 +9,7 @@ import {
   SidebarFooter,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { useUserData } from "@/hooks/use-user";
+import { useHelperContext } from "./provider/helper-provider";
 
 const navUser = [
   {
@@ -75,7 +74,7 @@ const navAdmin = [
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [userData] = useUserData();
+  const {userData} = useHelperContext()();
   
   return (
     <Sidebar collapsible="icon" {...props}>
