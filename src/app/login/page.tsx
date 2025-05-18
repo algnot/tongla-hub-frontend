@@ -89,13 +89,6 @@ export default function Login() {
                   <Button type="submit" className="w-full">
                     Login
                   </Button>
-                  <Button
-                    type="button"
-                    className="w-full"
-                    onClick={handleLoginWithOpenID}
-                  >
-                    Login With Open ID
-                  </Button>
                   <Link
                     href="/forgot-password"
                     className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
@@ -112,6 +105,19 @@ export default function Login() {
                     Sign up
                   </Link>
                 </div>
+                <div className="flex items-center gap-4 my-6">
+                  <div className="flex-grow h-px bg-muted" />
+                  <span className="text-muted-foreground text-sm">or</span>
+                  <div className="flex-grow h-px bg-muted" />
+                </div>
+                <Button
+                  type="button"
+                  className="w-full"
+                  variant="outline"
+                  onClick={handleLoginWithOpenID}
+                >
+                  Login With OpenID Connect
+                </Button>
               </form>
             </CardContent>
           </Card>
