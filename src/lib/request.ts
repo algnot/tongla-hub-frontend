@@ -44,7 +44,7 @@ const handlerError = (error: unknown, setAlert: (message: string, type: string, 
         message: "Redirecting to " + error.response.data.redirect,
       };
     } else if (error.response && error.response.data && error.response.data.message) {
-      setAlert("error", error.response.data.error, () => { }, false);
+      setAlert("error", error.response.data.message, () => { }, false);
       return {
         status: false,
         message: error.response.data.message,
