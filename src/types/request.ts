@@ -109,7 +109,7 @@ export interface UploadFileResponse {
   url: string;
 }
 
-export interface OpenIdConfigurationResponse{
+export interface OpenIdConfigurationResponse {
   authorization_endpoint: string;
   id_token_signing_alg_values_supported: string[];
   issuer: string;
@@ -120,11 +120,22 @@ export interface OpenIdConfigurationResponse{
   userinfo_endpoint: string;
 }
 
-export interface OpenIdTokenResponse{
-  
-    access_token: string;
-    expires_in: number;
-    id_token: string;
-    token_type: string;
+export interface OpenIdTokenResponse {
+  access_token: string;
+  expires_in: number;
+  id_token: string;
+  token_type: string;
+}
 
+export interface OpenIdGetUserInfoResponse {
+  id: string;
+  username: string;
+  email: string;
+  firstname: string;
+  lastname: string;
+  phone: string;
+  address: string;
+  birthdate: string;
+  gender: string;
+  is_verified: boolean;
 }

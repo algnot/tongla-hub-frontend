@@ -1,23 +1,19 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
-import { useAlertContext } from "@/components/provider/alert-provider";
+import { useHelperContext } from "@/components/provider/helper-provider";
 import { useLoadingContext } from "@/components/provider/loading-provider";
 import { useNavigateContext } from "@/components/provider/navigation-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useUserData } from "@/hooks/use-user";
-import { BackendClient } from "@/lib/request";
 import { isErrorResponse } from "@/types/payload";
 import { User } from "lucide-react";
 import Link from "next/link";
 import React, { FormEvent, useEffect, useRef } from "react";
 
 export default function Page() {
-  const client = new BackendClient();
+  const { backendClient, setAlert, userData } = useHelperContext()();
   const setLoading = useLoadingContext();
-  const setAlert = useAlertContext();
-  const [userData] = useUserData();
   const setNavigation = useNavigateContext();
 
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -34,15 +30,14 @@ export default function Page() {
     const form = formRef.current;
     const username = form?.username?.value ?? "";
 
-    const response = await client.updateUserById(
+    const response = await backendClient.updateUserById(
       userData?.uid.toString() ?? "",
       {
         username,
-      }
+      },
     );
 
     if (isErrorResponse(response)) {
-      setAlert("Error", response.message, 0, true);
       setLoading(false);
       return;
     }
@@ -56,11 +51,8 @@ export default function Page() {
 
     const reader = new FileReader();
     reader.onloadend = async () => {
-      const base64String = (reader.result as string).split(",")[1];      
-      const response = await client.uploadFile(
-        file.type,
-        base64String
-      );
+      const base64String = (reader.result as string).split(",")[1];
+      const response = await backendClient.uploadFile(file.type, base64String);
 
       if (isErrorResponse(response)) {
         setAlert("Error", response.message, 0, true);
@@ -68,15 +60,14 @@ export default function Page() {
         return;
       }
 
-      const updateResponse = await client.updateUserById(
+      const updateResponse = await backendClient.updateUserById(
         userData?.uid.toString() ?? "",
         {
           image_url: response.url,
-        }
+        },
       );
 
       if (isErrorResponse(updateResponse)) {
-        setAlert("Error", updateResponse.message, 0, true);
         setLoading(false);
         return;
       }

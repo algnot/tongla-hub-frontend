@@ -2,7 +2,6 @@
 import { useLoadingContext } from "@/components/provider/loading-provider";
 import { useNavigateContext } from "@/components/provider/navigation-provider";
 import { useEffect, useState } from "react";
-import { BackendClient } from "@/lib/request";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -13,22 +12,20 @@ import {
 } from "@/components/ui/select";
 import { GetQuestion, isErrorResponse } from "@/types/payload";
 import ProblemCard from "@/components/problem-card";
-import { useAlertContext } from "@/components/provider/alert-provider";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useHelperContext } from "@/components/provider/helper-provider";
 
 type RatingType = "all" | "1" | "2" | "3" | "4" | "5";
 type StateType = "all" | "not_submitted" | "submitted";
 
 export default function Page() {
-  const client = new BackendClient();
+  const { backendClient } = useHelperContext()();
   const setLoading = useLoadingContext();
   const setNavigation = useNavigateContext();
-  const setAlert = useAlertContext();
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const [problems, setProblems] = useState<GetQuestion[]>([]);
-
   const rating = (searchParams.get("rating") as RatingType) || "all";
   const state = (searchParams.get("state") as StateType) || "all";
 
@@ -39,11 +36,10 @@ export default function Page() {
   };
 
   const fetchData = async () => {
-    const response = await client.getQuestion(100, 0, state, rating);
+    const response = await backendClient.getQuestion(100, 0, state, rating);
+    setLoading(false);
 
     if (isErrorResponse(response)) {
-      setAlert("Error", response.message, 0, true);
-      setLoading(false);
       return;
     }
 

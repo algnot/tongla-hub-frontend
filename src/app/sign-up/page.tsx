@@ -1,20 +1,16 @@
 "use client";
-import { useAlertContext } from "@/components/provider/alert-provider";
-import { useFullLoadingContext } from "@/components/provider/full-loading-provider";
+import { useHelperContext } from "@/components/provider/helper-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BackendClient } from "@/lib/request";
 import { isErrorResponse } from "@/types/payload";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { FormEvent, useRef } from "react";
 
 export default function SignUp() {
-  const setAlert = useAlertContext();
-  const setFullLoading = useFullLoadingContext();
-  const client = new BackendClient();
+  const { setFullLoading, setAlert, backendClient } = useHelperContext()();
   const formRef = useRef<HTMLFormElement | null>(null);
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
@@ -32,26 +28,18 @@ export default function SignUp() {
       return;
     }
     setFullLoading(true);
-    const response = await client.signUp({
+    const response = await backendClient.signUp({
       username,
       email,
       password,
     });
+    setFullLoading(false);
 
     if (isErrorResponse(response)) {
-      setFullLoading(false);
-      setAlert("Error", response.message, 0, true);
       return;
     }
 
-    setAlert(
-      "Sign up Complete",
-      `Welcome ${response.username} :)`,
-      () => {
-        window.location.href = redirect ?? "/dashboard";
-      },
-      false
-    );
+    window.location.href = redirect ?? "/dashboard";
   };
 
   return (

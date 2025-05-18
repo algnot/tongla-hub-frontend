@@ -21,8 +21,6 @@ import {
   ExecuteCodeRequest,
   ExecuteCodeResponse,
   GetUserByIdResponse,
-  OpenIdConfigurationResponse,
-  OpenIdTokenResponse,
   Question,
   SubmitCodeRequest,
   SubmitCodeResponse,
@@ -31,20 +29,34 @@ import {
   UserType,
 } from "@/types/request";
 
-const handlerError = (error: unknown): ErrorResponse => {
+const handlerError = (error: unknown, setAlert: (message: string, type: string, action: number | (() => void), isOpen: boolean) => void): ErrorResponse => {
   if (axios.isAxiosError(error)) {
-    if (error.response && error.response.data && error.response.data.message) {
+    if (error.status === 403) {
+      return {
+        status: false,
+        message: "Session expired. Please login again.",
+      };
+    } else if (error.response && error.response.data && error.response.data.redirect) {
+      window.location.href = error.response.data.redirect;
+      return {
+        status: false,
+        message: "Redirecting to " + error.response.data.redirect,
+      };
+    } else if (error.response && error.response.data && error.response.data.message) {
+      setAlert("error", error.response.data.error, () => { }, false);
       return {
         status: false,
         message: error.response.data.message,
       };
     } else {
+      setAlert("error", error.message, () => { }, false);
       return {
         status: false,
         message: error.message,
       };
     }
   } else {
+    setAlert("An unknown error occurred. Try again!", "error", 0, false);
     return {
       status: false,
       message: "An unknow error occurred. try again!",
@@ -52,82 +64,16 @@ const handlerError = (error: unknown): ErrorResponse => {
   }
 };
 
-export class OpenIdClient {
-  private readonly client: AxiosInstance;
-
-  constructor() {
-    this.client = axios.create({
-      baseURL: process.env.NEXT_PUBLIC_OPENID_PATH,
-      headers: {
-        "Content-Type": "application/json"
-      },
-    });
-  }
-
-  async getOpenIdConfigurationInfo(): Promise<OpenIdConfigurationResponse> {
-    try {
-      const response = await this.client.get("/openid/.well-known/configuration");
-      return response.data;
-    } catch (e) {
-      return {
-        "authorization_endpoint": "",
-        "id_token_signing_alg_values_supported": [],
-        "issuer": "",
-        "jwks_uri": "",
-        "response_types_supported": [],
-        "subject_types_supported": [],
-        "token_endpoint": "",
-        "userinfo_endpoint": ""
-      }
-    }
-
-  }
-
-  async getAuthorizationEndpoint(): Promise<string> {
-    try {
-      const config = await this.getOpenIdConfigurationInfo();
-      return `${config.authorization_endpoint}?client_id=${process.env.NEXT_PUBLIC_OPENID_CLIENT_ID}&redirect_uri=${process.env.NEXT_PUBLIC_OPENID_REDIRECT_URI}&scope=openid profile email&response_type=code&state=${Math.random()}`
-    } catch (e) {
-      return ""
-    }
-  }
-
-  async getToken(code: string): Promise<OpenIdTokenResponse> {
-    try {
-      const config = await this.getOpenIdConfigurationInfo();
-      const response = await axios.post(`${config.token_endpoint}?grant_type=authorization_code&client_id=${process.env.NEXT_PUBLIC_OPENID_CLIENT_ID}&client_secret=${process.env.NEXT_PUBLIC_OPENID_CLIENT_SECRET}&redirect_uri=${process.env.NEXT_PUBLIC_OPENID_REDIRECT_URI}&code=${code}`)
-      return response.data
-    } catch (e) {
-      return {
-        "access_token": "",
-        "expires_in": 0,
-        "id_token": "",
-        "token_type": ""
-      }
-    }
-  }
-
-  async getUserInfo(accessToken: string): Promise<any>{
-    try {
-      const config = await this.getOpenIdConfigurationInfo(); 
-      const response = await axios.get(config.userinfo_endpoint, {
-        headers: {
-          "Authorization": `Bearer ${accessToken}`
-        }
-      })
-      return response.data
-    } catch (e) {
-      
-    }
-    
-    
-  }
-}
-
 export class BackendClient {
   private readonly client: AxiosInstance;
+  private readonly plainClient: AxiosInstance;
+  private isRefreshing = false;
+  private refreshPromise: Promise<boolean> | null = null;
+  private readonly setAlert: (message: string, type: string, action: number | (() => void), isOpen: boolean) => void;
 
-  constructor() {
+  constructor(setAlert: (message: string, type: string, action: number | (() => void), isOpen: boolean) => void) {
+    this.setAlert = setAlert;
+
     this.client = axios.create({
       baseURL: process.env.NEXT_PUBLIC_BACKEND_PATH,
       headers: {
@@ -136,55 +82,70 @@ export class BackendClient {
       },
     });
 
+    this.plainClient = axios.create({
+      baseURL: process.env.NEXT_PUBLIC_BACKEND_PATH,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
+    this.client.interceptors.response.use(
+      response => response,
+      async (error) => {
+        const originalRequest = error.config;
+
+        if (error.response && error.response.status === 403 && getItem("refresh_token")) {
+          if (!this.isRefreshing) {
+            this.isRefreshing = true;
+            this.refreshPromise = this.refreshAccessTokenSilently().finally(() => {
+              this.isRefreshing = false;
+              this.refreshPromise = null;
+            });
+          }
+
+          const refreshed = await this.refreshPromise;
+          if (refreshed) {
+            originalRequest.headers["Authorization"] = `Bearer ${getItem("access_token")}`;
+            return this.client(originalRequest);
+          } else {
+            removeItem("refresh_token");
+            removeItem("access_token");
+          }
+        }
+
+        throw error;
+      }
+    );
+  }
+
+  async refreshAccessTokenSilently(): Promise<boolean> {
+    try {
+      const response = await this.plainClient.get("/auth/generate-access-token", {
+        headers: {
+          Authorization: `Bearer ${getItem("refresh_token")}`,
+        },
+      });
+      setItem("access_token", response.data.access_token);
+      return true;
+    } catch (e) {
+      console.log("Refresh token failed", e);
+      return false;
+    }
   }
 
   async getUserInfo(): Promise<UserType | ErrorResponse> {
     try {
-      const accessToken = getItem("access_token");
-      const response = await this.client.get("/auth/me", {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      setItem("user_data", response.data);
+      const response = await this.client.get("/auth/me");
       return response.data;
     } catch (e) {
-      if (axios.isAxiosError(e) && e.status === 403) {
-        removeItem("access_token");
-        const refreshToken = getItem("refresh_token");
-        if (refreshToken) {
-          await this.generateNewAccessToken();
-          return this.getUserInfo();
-        }
-        return {
-          email: "",
-          username: "",
-          role: "USER",
-          image_url: "",
-          uid: 0,
-        };
-      }
-      return handlerError(e);
-    }
-  }
-
-  async generateNewAccessToken(): Promise<ErrorResponse | void> {
-    try {
-      const refreshToken = getItem("refresh_token");
-      const response = await this.client.get("/auth/generate-access-token", {
-        headers: {
-          Authorization: `Bearer ${refreshToken}`,
-        },
-      });
-      setItem("access_token", response.data.access_token);
-    } catch (e) {
-      if (axios.isAxiosError(e) && e.status === 403) {
-        removeItem("access_token");
-        removeItem("refresh_token");
-        removeItem("user_data");
-      }
-      return handlerError(e);
+      console.log(e);
+      return {
+        email: "",
+        username: "",
+        role: "USER",
+        image_url: "",
+        uid: 0,
+      };
     }
   }
 
@@ -198,7 +159,7 @@ export class BackendClient {
       await this.getUserInfo();
       return response.data;
     } catch (e) {
-      return handlerError(e);
+      return handlerError(e, this.setAlert);
     }
   }
 
@@ -210,7 +171,7 @@ export class BackendClient {
       await this.getUserInfo();
       return response.data;
     } catch (e) {
-      return handlerError(e);
+      return handlerError(e, this.setAlert);
     }
   }
 
@@ -223,7 +184,7 @@ export class BackendClient {
       });
       return response.data;
     } catch (e) {
-      return handlerError(e);
+      return handlerError(e, this.setAlert);
     }
   }
 
@@ -234,7 +195,7 @@ export class BackendClient {
       const response = await this.client.post("/auth/reset-password-token", payload);
       return response.data;
     } catch (e) {
-      return handlerError(e);
+      return handlerError(e, this.setAlert);
     }
   }
 
@@ -258,7 +219,7 @@ export class BackendClient {
       setItem("refresh_token", response.data.refresh_token);
       return await this.getUserInfo();
     } catch (e) {
-      return handlerError(e);
+      return handlerError(e, this.setAlert);
     }
   }
 
@@ -268,18 +229,10 @@ export class BackendClient {
     text: string
   ): Promise<GetUserResponse | ErrorResponse> {
     try {
-      const accessToken = getItem("access_token");
-      const response = await this.client.get(
-        `/data/list?limit=${limit}&offset=${offset}&text=${text}&model=user`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
+      const response = await this.client.get(`/data/list?limit=${limit}&offset=${offset}&text=${text}&model=user`);
       return response.data;
     } catch (e) {
-      return handlerError(e);
+      return handlerError(e, this.setAlert);
     }
   }
 
@@ -289,18 +242,10 @@ export class BackendClient {
     text: string
   ): Promise<GetEmailSenderResponse | ErrorResponse> {
     try {
-      const accessToken = getItem("access_token");
-      const response = await this.client.get(
-        `/data/list?limit=${limit}&offset=${offset}&text=${text}&model=email`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
+      const response = await this.client.get(`/data/list?limit=${limit}&offset=${offset}&text=${text}&model=email`);
       return response.data;
     } catch (e) {
-      return handlerError(e);
+      return handlerError(e, this.setAlert);
     }
   }
 
@@ -310,18 +255,10 @@ export class BackendClient {
     text: string
   ): Promise<GetOneTimePasswordResponse | ErrorResponse> {
     try {
-      const accessToken = getItem("access_token");
-      const response = await this.client.get(
-        `/data/list?limit=${limit}&offset=${offset}&text=${text}&model=otp`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
+      const response = await this.client.get(`/data/list?limit=${limit}&offset=${offset}&text=${text}&model=otp`);
       return response.data;
     } catch (e) {
-      return handlerError(e);
+      return handlerError(e, this.setAlert);
     }
   }
 
@@ -331,18 +268,10 @@ export class BackendClient {
     text: string
   ): Promise<GetQuestionAdminResponse | ErrorResponse> {
     try {
-      const accessToken = getItem("access_token");
-      const response = await this.client.get(
-        `/data/list?limit=${limit}&offset=${offset}&text=${text}&model=question`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
+      const response = await this.client.get(`/data/list?limit=${limit}&offset=${offset}&text=${text}&model=question`);
       return response.data;
     } catch (e) {
-      return handlerError(e);
+      return handlerError(e, this.setAlert);
     }
   }
 
@@ -353,18 +282,10 @@ export class BackendClient {
     rate: "all" | "1" | "2" | "3" | "4" | "5",
   ): Promise<GetQuestionResponse | ErrorResponse> {
     try {
-      const accessToken = getItem("access_token");
-      const response = await this.client.get(
-        `/code/list-question?limit=${limit}&offset=${offset}&mode=${mode}&rate=${rate}`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
+      const response = await this.client.get(`/code/list-question?limit=${limit}&offset=${offset}&mode=${mode}&rate=${rate}`);
       return response.data;
     } catch (e) {
-      return handlerError(e);
+      return handlerError(e, this.setAlert);
     }
   }
 
@@ -375,21 +296,16 @@ export class BackendClient {
       const response = await this.client.post("/code/execute", payload);
       return response.data;
     } catch (e) {
-      return handlerError(e);
+      return handlerError(e, this.setAlert);
     }
   }
 
   async getQuestionById(id: string): Promise<Question | ErrorResponse> {
     try {
-      const accessToken = getItem("access_token");
-      const response = await this.client.get(`/code/get-question-by-id?id=${id}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const response = await this.client.get(`/code/get-question-by-id?id=${id}`);
       return response.data;
     } catch (e) {
-      return handlerError(e);
+      return handlerError(e, this.setAlert);
     }
   }
 
@@ -397,15 +313,10 @@ export class BackendClient {
     payload: CreateQuestionRequest
   ): Promise<Question | ErrorResponse> {
     try {
-      const accessToken = getItem("access_token");
-      const response = await this.client.post(`/code/add-question`, payload, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const response = await this.client.post(`/code/add-question`, payload);
       return response.data;
     } catch (e) {
-      return handlerError(e);
+      return handlerError(e, this.setAlert);
     }
   }
 
@@ -413,57 +324,37 @@ export class BackendClient {
     payload: UpdateQuestionRequest
   ): Promise<Question | ErrorResponse> {
     try {
-      const accessToken = getItem("access_token");
-      const response = await this.client.put(`/code/update-question`, payload, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const response = await this.client.put(`/code/update-question`, payload);
       return response.data;
     } catch (e) {
-      return handlerError(e);
+      return handlerError(e, this.setAlert);
     }
   }
 
   async submitCode(payload: SubmitCodeRequest): Promise<SubmitCodeResponse | ErrorResponse> {
     try {
-      const accessToken = getItem("access_token");
-      const response = await this.client.post(`/code/submit`, payload, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const response = await this.client.post(`/code/submit`, payload);
       return response.data;
     } catch (e) {
-      return handlerError(e);
+      return handlerError(e, this.setAlert);
     }
   }
 
   async getUserById(id: string): Promise<GetUserByIdResponse | ErrorResponse> {
     try {
-      const accessToken = getItem("access_token");
-      const response = await this.client.get(`/user/${id}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const response = await this.client.get(`/user/${id}`);
       return response.data;
     } catch (e) {
-      return handlerError(e);
+      return handlerError(e, this.setAlert);
     }
   }
 
   async updateUserById(id: string, payload: UpdateUserByIdRequest): Promise<GetUserByIdResponse | ErrorResponse> {
     try {
-      const accessToken = getItem("access_token");
-      const response = await this.client.put(`/user/${id}`, payload, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const response = await this.client.put(`/user/${id}`, payload);
       return response.data;
     } catch (e) {
-      return handlerError(e);
+      return handlerError(e, this.setAlert);
     }
   }
 
@@ -475,7 +366,7 @@ export class BackendClient {
       });
       return response.data;
     } catch (e) {
-      return handlerError(e);
+      return handlerError(e, this.setAlert);
     }
   }
 }

@@ -4,7 +4,7 @@ import AddTestCaseComponent, {
 } from "@/components/add-test-case";
 import CodeEditor from "@/components/coding-editor";
 import MarkdownComponent from "@/components/mark-down";
-import { useAlertContext } from "@/components/provider/alert-provider";
+import { useHelperContext } from "@/components/provider/helper-provider";
 import { useNavigateContext } from "@/components/provider/navigation-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,8 +17,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { useUserData } from "@/hooks/use-user";
-import { BackendClient } from "@/lib/request";
 import {
   CreateQuestionRequest,
   QuestionTestCaseRequest,
@@ -27,17 +25,15 @@ import {
 import React, { useEffect, useState } from "react";
 
 export default function Page() {
-  const client = new BackendClient();
+  const { userData, setAlert, backendClient } = useHelperContext()();
   const [loading, setLoading] = useState<boolean>(false);
-  const setAlert = useAlertContext();
-  const [userData] = useUserData();
   const setNavigation = useNavigateContext();
 
   const [startCode, setStartCode] = useState<string>(
-    "input = input()\nprint(input)"
+    "input = input()\nprint(input)",
   );
   const [answerCode, setAnswerCode] = useState<string>(
-    "# Add answer code and add input test case\ninput = input()\nprint(input)"
+    "# Add answer code and add input test case\ninput = input()\nprint(input)",
   );
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("### hello world");
@@ -48,7 +44,7 @@ export default function Page() {
   ]);
 
   const [rightActiveTab, setRightActiveTab] = useState<"detail" | "testCase">(
-    "detail"
+    "detail",
   );
 
   const [leftActiveTab, setLeftActiveTab] = useState<
@@ -63,7 +59,7 @@ export default function Page() {
           path: "/dashboard/problems",
         },
       ],
-      "Create Problem"
+      "Create Problem",
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -74,27 +70,26 @@ export default function Page() {
 
   const onChangeInputTestCase = (index: number, value: string) => {
     setTestCases((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, input: value } : item))
+      prev.map((item, i) => (i === index ? { ...item, input: value } : item)),
     );
   };
 
   const onRunTest = async () => {
     setLoading(true);
     for (const testCase of testCases) {
-      const response = await client.executeCode({
+      const response = await backendClient.executeCode({
         code: answerCode,
         stdin: testCase.input,
       });
+      setLoading(false);
+
       if (isErrorResponse(response)) {
-        setAlert("Error", response.message, 0, true);
-        setLoading(false);
         return;
       }
       const expected =
         response.stdout != "" ? response.stdout : response.stderr;
       testCase.expected = expected;
     }
-    setLoading(false);
   };
 
   const validatePayload = (payload: CreateQuestionRequest): string => {
@@ -162,21 +157,13 @@ export default function Page() {
     }
 
     setLoading(true);
-    const response = await client.addQuestion(payload);
+    const response = await backendClient.addQuestion(payload);
+    setLoading(false);
+
     if (isErrorResponse(response)) {
-      setAlert("Error", response.message, 0, true);
-      setLoading(false);
       return;
     }
-
-    setAlert(
-      "Created",
-      "your problem is created!",
-      () => {
-        window.location.href = `/dashboard/problems/${response.id}`;
-      },
-      false
-    );
+    window.location.href = `/dashboard/problems/${response.id}`;
   };
 
   return (

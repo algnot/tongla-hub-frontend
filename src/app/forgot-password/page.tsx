@@ -1,6 +1,5 @@
 "use client";
-import { useAlertContext } from "@/components/provider/alert-provider";
-import { useFullLoadingContext } from "@/components/provider/full-loading-provider";
+import { useHelperContext } from "@/components/provider/helper-provider";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,15 +10,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BackendClient } from "@/lib/request";
 import { isErrorResponse } from "@/types/payload";
 import Link from "next/link";
 import { FormEvent, useRef, useState, useEffect } from "react";
 
 export default function Login() {
-  const setAlert = useAlertContext();
-  const setFullLoading = useFullLoadingContext();
-  const client = new BackendClient();
+  const { setFullLoading, backendClient, setAlert } = useHelperContext()();
   const formRef = useRef<HTMLFormElement | null>(null);
 
   const [ref, setRef] = useState<string>("");
@@ -29,32 +25,33 @@ export default function Login() {
 
   useEffect(() => {
     if (otpSent && resendCountdown > 0) {
-      const timer = setInterval(() => setResendCountdown((prev) => prev - 1), 1000);
+      const timer = setInterval(
+        () => setResendCountdown((prev) => prev - 1),
+        1000,
+      );
       return () => clearInterval(timer);
     }
   }, [otpSent, resendCountdown]);
 
   const handleGetOtpSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    if(otp && ref) {
-        return handleGetTokenSubmit(event);
+    if (otp && ref) {
+      return handleGetTokenSubmit(event);
     }
 
     event.preventDefault();
     setFullLoading(true);
     const form = formRef.current;
     const email = form?.email?.value ?? "";
-    const response = await client.resetPasswordGetOtp(email);
+    const response = await backendClient.resetPasswordGetOtp(email);
+    setFullLoading(false);
 
     if (isErrorResponse(response)) {
-      setFullLoading(false);
-      setAlert("Error", response.message, 0, true);
       return;
     }
 
     setRef(response.ref);
     setOtpSent(true);
     setResendCountdown(300);
-    setFullLoading(false);
   };
 
   const handleGetTokenSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -64,18 +61,19 @@ export default function Login() {
     const email = form?.email?.value ?? "";
     const code = form?.otp?.value ?? "";
 
-    const response = await client.resetPasswordGetToken({
-        email, code, ref
+    const response = await backendClient.resetPasswordGetToken({
+      email,
+      code,
+      ref,
     });
+    setFullLoading(false);
 
     if (isErrorResponse(response)) {
-      setFullLoading(false);
-      setAlert("Error", response.message, 0, true);
       return;
     }
 
     setFullLoading(false);
-    window.location.href = "/reset-password?token=" + response.token
+    window.location.href = "/reset-password?token=" + response.token;
   };
 
   const handleResendOtp = async () => {
@@ -83,16 +81,15 @@ export default function Login() {
     const form = formRef.current;
     const email = form?.email?.value ?? "";
 
-    const response = await client.resetPasswordGetOtp(email);
+    const response = await backendClient.resetPasswordGetOtp(email);
+    setFullLoading(false);
 
     if (isErrorResponse(response)) {
-      setFullLoading(false);
-      setAlert("Error", response.message, 0, true);
       return;
     }
 
     setRef(response.ref);
-    setResendCountdown(300); 
+    setResendCountdown(300);
     setFullLoading(false);
     setAlert("Success", "OTP resent to your email.", 0, false);
   };
@@ -147,7 +144,11 @@ export default function Login() {
                     </div>
                   )}
 
-                  <Button type="submit" className="w-full" disabled={otpSent ? otp.length < 6 : false}>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={otpSent ? otp.length < 6 : false}
+                  >
                     Submit
                   </Button>
 
@@ -158,14 +159,19 @@ export default function Login() {
                         className="w-full"
                         disabled={resendCountdown > 0}
                       >
-                        Resend OTP {resendCountdown > 0 && `(${formatCountdown(resendCountdown)})`}
+                        Resend OTP{" "}
+                        {resendCountdown > 0 &&
+                          `(${formatCountdown(resendCountdown)})`}
                       </Button>
                     </div>
                   )}
                 </div>
                 <div className="mt-6 text-center text-sm">
                   Don&apos;t have an account?{" "}
-                  <Link href="/sign-up" className="underline underline-offset-4">
+                  <Link
+                    href="/sign-up"
+                    className="underline underline-offset-4"
+                  >
                     Sign up
                   </Link>
                 </div>

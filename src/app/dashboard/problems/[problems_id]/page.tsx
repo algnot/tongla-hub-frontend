@@ -2,15 +2,12 @@
 "use client";
 import CodeEditor from "@/components/coding-editor";
 import MarkdownComponent from "@/components/mark-down";
-import { useAlertContext } from "@/components/provider/alert-provider";
 import { useLoadingContext } from "@/components/provider/loading-provider";
 import { useNavigateContext } from "@/components/provider/navigation-provider";
 import TestCaseComponent, { TestCaseProps } from "@/components/test-case";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { useUserData } from "@/hooks/use-user";
-import { BackendClient } from "@/lib/request";
 import { isErrorResponse } from "@/types/payload";
 import { Question } from "@/types/request";
 import { v4 as uuidv4 } from "uuid";
@@ -18,15 +15,14 @@ import { RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getItem, removeItem, setItem } from "@/lib/storage";
+import { useHelperContext } from "@/components/provider/helper-provider";
 
 type PageProps = {
   params: Promise<{ problems_id: string[] }>;
 };
 
 export default function Page({ params }: PageProps) {
-  const client = new BackendClient();
-  const [userData] = useUserData();
-  const setAlert = useAlertContext();
+  const { backendClient, setAlert, userData } = useHelperContext()();
   const setNavigation = useNavigateContext();
   const [questionData, setQuestionData] = useState<Question | null>(null);
   const [testCase, setTestCase] = useState<TestCaseProps[]>([]);
@@ -52,7 +48,7 @@ export default function Page({ params }: PageProps) {
       setFullLoading(true);
     }
 
-    const response = await client.getQuestionById(problemId);
+    const response = await backendClient.getQuestionById(problemId);
     if (isErrorResponse(response)) {
       setAlert("Error", response.message, 0, true);
       setLoading(false);
@@ -118,7 +114,7 @@ export default function Page({ params }: PageProps) {
 
   const handleRun = async () => {
     setLoading(true);
-    const response = await client.executeCode({
+    const response = await backendClient.executeCode({
       code,
       stdin,
     });
@@ -149,7 +145,7 @@ export default function Page({ params }: PageProps) {
     let result: TestCaseProps[] = [];
     let count = 1;
     for (const testCase of testCases) {
-      const response = await client.executeCode({
+      const response = await backendClient.executeCode({
         code,
         stdin: testCase.input,
       });
@@ -194,7 +190,7 @@ export default function Page({ params }: PageProps) {
       "Do you want to submit this code?",
       async () => {
         setFullLoading(true);
-        const response = await client.submitCode({
+        const response = await backendClient.submitCode({
           question_id: parseInt(problemId),
           code: code,
         });

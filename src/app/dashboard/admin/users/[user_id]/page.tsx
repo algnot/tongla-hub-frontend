@@ -1,12 +1,11 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
-import { useAlertContext } from "@/components/provider/alert-provider";
+import { useHelperContext } from "@/components/provider/helper-provider";
 import { useLoadingContext } from "@/components/provider/loading-provider";
 import { useNavigateContext } from "@/components/provider/navigation-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BackendClient } from "@/lib/request";
 import { isErrorResponse } from "@/types/payload";
 import { GetUserByIdResponse } from "@/types/request";
 import { User } from "lucide-react";
@@ -18,10 +17,9 @@ type PageProps = {
 };
 
 export default function Page({ params }: PageProps) {
+  const { backendClient } = useHelperContext()();
   const setLoading = useLoadingContext();
   const setNavigation = useNavigateContext();
-  const setAlert = useAlertContext();
-  const client = new BackendClient();
 
   const [defaultValue, setDefaultValue] = useState<GetUserByIdResponse>();
   const [isCoding, setIsCoding] = useState<boolean>(false);
@@ -56,16 +54,14 @@ export default function Page({ params }: PageProps) {
   const fetchData = async () => {
     const { user_id } = await params;
     const userId = Array.isArray(user_id) ? user_id[0] : user_id;
-    const response = await client.getUserById(userId);
+    const response = await backendClient.getUserById(userId);
+    setLoading(false);
 
     if (isErrorResponse(response)) {
-      setAlert("Error", response.message, 0, true);
-      setLoading(false);
       return;
     }
 
     checkSocketConnect(response.username, response.uid.toString());
-
     setDefaultValue(response);
     setNavigation(
       [
@@ -96,27 +92,19 @@ export default function Page({ params }: PageProps) {
     const role = form?.roleType?.value ?? "";
     const image_url = form?.image_url?.value ?? "";
 
-    const response = await client.updateUserById(userId, {
+    const response = await backendClient.updateUserById(userId, {
       username,
       email,
       role,
       image_url,
     });
 
+    setLoading(false);
     if (isErrorResponse(response)) {
-      setAlert("Error", response.message, 0, true);
-      setLoading(false);
       return;
     }
 
-    setAlert(
-      "Updated",
-      "The data is updated :)",
-      () => {
-        window.location.reload();
-      },
-      false
-    );
+    window.location.reload();
   };
 
   return (

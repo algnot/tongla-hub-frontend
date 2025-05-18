@@ -1,6 +1,4 @@
 "use client";
-import { useAlertContext } from "@/components/provider/alert-provider";
-import { useFullLoadingContext } from "@/components/provider/full-loading-provider";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,16 +9,15 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BackendClient, OpenIdClient } from "@/lib/request";
 import { isErrorResponse } from "@/types/payload";
 import Link from "next/link";
 import { FormEvent, useRef } from "react";
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams } from "next/navigation";
+import { OpenIdClient } from "@/lib/open_id";
+import { useHelperContext } from "@/components/provider/helper-provider";
 
 export default function Login() {
-  const setAlert = useAlertContext();
-  const setFullLoading = useFullLoadingContext();
-  const client = new BackendClient();
+  const { setFullLoading, backendClient } = useHelperContext()();
   const openIdClient = new OpenIdClient();
   const formRef = useRef<HTMLFormElement | null>(null);
   const searchParams = useSearchParams();
@@ -33,34 +30,27 @@ export default function Login() {
     const email = form?.email?.value ?? "";
     const password = form?.password?.value ?? "";
 
-    const response = await client.login({
+    const response = await backendClient.login({
       email,
       password,
     });
+    setFullLoading(false);
 
     if (isErrorResponse(response)) {
-      setFullLoading(false);
-      setAlert("Error", response.message, 0, true);
       return;
     }
 
-    setAlert(
-      "Login Complete",
-      `Welcome back ${response.username} :)`,
-      () => {
-        window.location.href = redirect ?? "/dashboard/problems";
-      },
-      false
-    );
+    window.location.href = redirect ?? "/dashboard/problems";
   };
 
   const handleLoginWithOpenID = async () => {
-    const redirectUri = await openIdClient.getAuthorizationEndpoint()
-    if (redirectUri === ""){
-      return 
-    } 
+    const redirectUri = await openIdClient.getAuthorizationEndpoint();
+    if (redirectUri === "") {
+      return;
+    }
     window.location.href = redirectUri;
-  }
+  };
+
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
@@ -99,7 +89,11 @@ export default function Login() {
                   <Button type="submit" className="w-full">
                     Login
                   </Button>
-                  <Button type="button" className="w-full" onClick={handleLoginWithOpenID}>
+                  <Button
+                    type="button"
+                    className="w-full"
+                    onClick={handleLoginWithOpenID}
+                  >
                     Login With Open ID
                   </Button>
                   <Link
@@ -111,7 +105,10 @@ export default function Login() {
                 </div>
                 <div className="mt-6 text-center text-sm">
                   Don&apos;t have an account?{" "}
-                  <Link href={`/sign-up${redirect ? "?redirect=" + redirect : ""}`} className="underline underline-offset-4">
+                  <Link
+                    href={`/sign-up${redirect ? "?redirect=" + redirect : ""}`}
+                    className="underline underline-offset-4"
+                  >
                     Sign up
                   </Link>
                 </div>

@@ -4,8 +4,7 @@ import AddTestCaseComponent, {
 } from "@/components/add-test-case";
 import CodeEditor from "@/components/coding-editor";
 import MarkdownComponent from "@/components/mark-down";
-import { useAlertContext } from "@/components/provider/alert-provider";
-import { useLoadingContext } from "@/components/provider/loading-provider";
+import { useHelperContext } from "@/components/provider/helper-provider";
 import { useNavigateContext } from "@/components/provider/navigation-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,8 +17,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { useUserData } from "@/hooks/use-user";
-import { BackendClient } from "@/lib/request";
 import {
   QuestionTestCaseRequest,
   UpdateQuestionRequest,
@@ -32,12 +29,10 @@ type PageProps = {
 };
 
 export default function Page({ params }: PageProps) {
-  const client = new BackendClient();
+  const { backendClient, setAlert, userData, setFullLoading } =
+    useHelperContext()();
   const [loading, setLoading] = useState<boolean>(false);
-  const setAlert = useAlertContext();
-  const [userData] = useUserData();
   const setNavigation = useNavigateContext();
-  const setFullLoading = useLoadingContext();
 
   const [problemId, setProblemId] = useState<string>("");
   const [startCode, setStartCode] = useState<string>("");
@@ -49,7 +44,7 @@ export default function Page({ params }: PageProps) {
   const [testCases, setTestCases] = useState<AddTestCaseComponentProps[]>([]);
 
   const [rightActiveTab, setRightActiveTab] = useState<"detail" | "testCase">(
-    "detail"
+    "detail",
   );
 
   const [leftActiveTab, setLeftActiveTab] = useState<
@@ -65,7 +60,7 @@ export default function Page({ params }: PageProps) {
           path: "/dashboard/problems",
         },
       ],
-      "Edit Problem"
+      "Edit Problem",
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -76,16 +71,9 @@ export default function Page({ params }: PageProps) {
     const problemId = Array.isArray(problems_id) ? problems_id[0] : problems_id;
     setProblemId(problemId);
 
-    const response = await client.getQuestionById(problemId);
+    const response = await backendClient.getQuestionById(problemId);
     if (isErrorResponse(response)) {
-      setAlert(
-        "Error",
-        response.message,
-        () => {
-          window.location.href = `/dashboard/problems/${problems_id}`;
-        },
-        true
-      );
+      window.location.href = `/dashboard/problems/${problems_id}`;
       return;
     }
 
@@ -127,7 +115,7 @@ export default function Page({ params }: PageProps) {
           path: "/dashboard/problems/" + response.id,
         },
       ],
-      "Edit Problem"
+      "Edit Problem",
     );
   };
 
@@ -137,27 +125,26 @@ export default function Page({ params }: PageProps) {
 
   const onChangeInputTestCase = (index: number, value: string) => {
     setTestCases((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, input: value } : item))
+      prev.map((item, i) => (i === index ? { ...item, input: value } : item)),
     );
   };
 
   const onRunTest = async () => {
     setLoading(true);
     for (const testCase of testCases) {
-      const response = await client.executeCode({
+      const response = await backendClient.executeCode({
         code: answerCode,
         stdin: testCase.input,
       });
+      setLoading(false);
+
       if (isErrorResponse(response)) {
-        setAlert("Error", response.message, 0, true);
-        setLoading(false);
         return;
       }
       const expected =
         response.stdout != "" ? response.stdout : response.stderr;
       testCase.expected = expected;
     }
-    setLoading(false);
   };
 
   const validatePayload = (payload: UpdateQuestionRequest): string => {
@@ -226,21 +213,14 @@ export default function Page({ params }: PageProps) {
     }
 
     setLoading(true);
-    const response = await client.updateQuestion(payload);
+    const response = await backendClient.updateQuestion(payload);
+    setLoading(false);
+
     if (isErrorResponse(response)) {
-      setAlert("Error", response.message, 0, true);
-      setLoading(false);
       return;
     }
 
-    setAlert(
-      "Updated",
-      "your problem is updated!",
-      () => {
-        window.location.href = `/dashboard/problems/${response.id}`;
-      },
-      true
-    );
+    window.location.href = `/dashboard/problems/${response.id}`;
   };
 
   return (

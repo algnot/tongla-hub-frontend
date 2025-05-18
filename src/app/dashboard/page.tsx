@@ -1,17 +1,13 @@
 "use client";
 import CodeEditor from "@/components/coding-editor";
-import { useAlertContext } from "@/components/provider/alert-provider";
+import { useHelperContext } from "@/components/provider/helper-provider";
 import { useNavigateContext } from "@/components/provider/navigation-provider";
 import { Button } from "@/components/ui/button";
-import { useUserData } from "@/hooks/use-user";
-import { BackendClient } from "@/lib/request";
 import { isErrorResponse } from "@/types/payload";
 import { useEffect, useState } from "react";
 
 export default function Page() {
-  const setAlert = useAlertContext();
-  const client = new BackendClient();
-  const [userData] = useUserData();
+  const { backendClient, userData } = useHelperContext()();
   const setNavigation = useNavigateContext();
 
   const [code, setCode] = useState<string>("");
@@ -22,24 +18,21 @@ export default function Page() {
   const handleRun = async () => {
     setLoading(true);
 
-    const response = await client.executeCode({
+    const response = await backendClient.executeCode({
       code, stdin
     });
+    setLoading(false);
 
     if (isErrorResponse(response)) {
-      setAlert("Error", response.message, 0, true);
-      setLoading(false);
       return;
     }
 
     if (response.stderr) {
       setStdout(`Error! run time ${response.runtime} ${response.runtime_unit}\n\noutput:\n${response.stderr}`);
-      setLoading(false);
       return;
     }
 
     setStdout(`Success! run time ${response.runtime} ${response.runtime_unit}\n\noutput:\n${response.stdout}`);
-    setLoading(false);
   };
 
   useEffect(() => {

@@ -3,12 +3,12 @@ import { useLoadingContext } from "@/components/provider/loading-provider";
 import { useNavigateContext } from "@/components/provider/navigation-provider";
 import { useEffect } from "react";
 import { DataTable } from "@/components/data-table";
-import { BackendClient } from "@/lib/request";
+import { useHelperContext } from "@/components/provider/helper-provider";
 
 export default function Page() {
   const setLoading = useLoadingContext();
   const setNavigation = useNavigateContext();
-  const client = new BackendClient();
+  const { backendClient } = useHelperContext()();
 
   useEffect(() => {
     setLoading(false);
@@ -18,7 +18,7 @@ export default function Page() {
   return (
     <div className="container mx-auto py-10 px-5">
       <DataTable
-        fetchData={(limit, offset, text) => client.getEmailSender(limit, offset, text)}
+        fetchData={(limit, offset, text) => backendClient.getEmailSender(limit, offset, text)}
         columns={[
           { key: "id", label: "ID" },
           { key: "to_email", label: "Email" },
