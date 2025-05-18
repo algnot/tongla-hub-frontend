@@ -6,9 +6,11 @@ import { useHelperContext } from "@/components/provider/helper-provider";
 import { isErrorResponse } from "@/types/payload";
 export default function Page() {
   const searchParams = useSearchParams();
-  const { backendClient } = useHelperContext()();
+  const { backendClient, setFullLoading } = useHelperContext()();
   const code = searchParams.get("code") ?? "";
+
   useEffect(() => {
+    setFullLoading(true);
     getUserInfo();
   }, []);
 
@@ -24,5 +26,5 @@ export default function Page() {
     window.location.href = "/dashboard/problems";
   };
 
-  return <div>This feature is implementing..</div>;
+  return <div></div>;
 }
