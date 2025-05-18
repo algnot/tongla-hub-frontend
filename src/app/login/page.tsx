@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BackendClient } from "@/lib/request";
+import { BackendClient, OpenIdClient } from "@/lib/request";
 import { isErrorResponse } from "@/types/payload";
 import Link from "next/link";
 import { FormEvent, useRef } from "react";
@@ -21,6 +21,7 @@ export default function Login() {
   const setAlert = useAlertContext();
   const setFullLoading = useFullLoadingContext();
   const client = new BackendClient();
+  const openIdClient = new OpenIdClient();
   const formRef = useRef<HTMLFormElement | null>(null);
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
@@ -53,6 +54,13 @@ export default function Login() {
     );
   };
 
+  const handleLoginWithOpenID = async () => {
+    const redirectUri = await openIdClient.getAuthorizationEndpoint()
+    if (redirectUri === ""){
+      return 
+    } 
+    window.location.href = redirectUri;
+  }
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
@@ -90,6 +98,9 @@ export default function Login() {
                   </div>
                   <Button type="submit" className="w-full">
                     Login
+                  </Button>
+                  <Button type="button" className="w-full" onClick={handleLoginWithOpenID}>
+                    Login With Open ID
                   </Button>
                   <Link
                     href="/forgot-password"

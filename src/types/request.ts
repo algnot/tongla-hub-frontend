@@ -17,6 +17,7 @@ export const isUserType = (data: any): data is UserType => {
   );
 };
 
+
 export interface ExecuteCodeRequest {
   stdin: string;
   code: string;
@@ -106,4 +107,24 @@ export interface UpdateUserByIdRequest {
 
 export interface UploadFileResponse {
   url: string;
+}
+
+export interface OpenIdConfigurationResponse{
+  authorization_endpoint: string;
+  id_token_signing_alg_values_supported: string[];
+  issuer: string;
+  jwks_uri: string;
+  response_types_supported: string[];
+  subject_types_supported: string[];
+  token_endpoint: string;
+  userinfo_endpoint: string;
+}
+
+export interface OpenIdTokenResponse{
+  
+    access_token: string;
+    expires_in: number;
+    id_token: string;
+    token_type: string;
+
 }
