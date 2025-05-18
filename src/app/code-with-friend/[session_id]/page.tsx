@@ -2,9 +2,8 @@
 "use client";
 import CodeEditor from "@/components/coding-editor";
 import MarkdownComponent from "@/components/mark-down";
-import { useAlertContext } from "@/components/provider/alert-provider";
+import { useHelperContext } from "@/components/provider/helper-provider";
 import { Button } from "@/components/ui/button";
-import { BackendClient } from "@/lib/request";
 import { isErrorResponse } from "@/types/payload";
 import React, { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
@@ -14,8 +13,7 @@ type PageProps = {
 };
 
 export default function Page({ params }: PageProps) {
-  const client = new BackendClient();
-  const setAlert = useAlertContext();
+  const { backendClient, setAlert } = useHelperContext()();
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [socketUserId, setSocketUserId] = useState<string>("");
   const [code, setCode] = useState<string>("");
@@ -98,7 +96,7 @@ export default function Page({ params }: PageProps) {
 
   const handleRun = async () => {
     setLoading(true);
-    const response = await client.executeCode({
+    const response = await backendClient.executeCode({
       code,
       stdin,
     });
