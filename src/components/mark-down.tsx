@@ -6,9 +6,11 @@ interface MarkdownComponentProps {
   preview: PreviewType;
   onChange?: (content: string) => void;
   editable?: boolean;
+  hideToolbar?: boolean;
+  height?: string;
 }
 
-export default function MarkdownComponent({ content, preview, editable, onChange }: MarkdownComponentProps) {
+export default function MarkdownComponent({ content, preview, editable, onChange, hideToolbar=false, height="600px" }: MarkdownComponentProps) {
   const handleOnchange = (value: string | undefined) => {
     if (!value || !onChange) {
       if(onChange){
@@ -19,14 +21,15 @@ export default function MarkdownComponent({ content, preview, editable, onChange
     onChange(value)
   }
   return (
-    <div className="markdown mt-6 min-w-full">
+    <div className="markdown min-w-full">
       <MDEditor
-        height={600}
+        height={height}
         preview={preview}
         contentEditable={editable}
         value={content}
         onChange={handleOnchange}
         className="resize-none"
+        hideToolbar={hideToolbar}
       />
     </div>
   );
