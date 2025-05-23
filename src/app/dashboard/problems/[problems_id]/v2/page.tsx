@@ -47,6 +47,19 @@ export default function Page({ params }: PageProps) {
     setQuestionData(response);
     setStdin(response.test_cases[0].input);
 
+    let startCode = "";
+    if (response.submit_info.id != 0) {
+      if (response.submit_info.status == "PENDING") {
+        setTimeout(() => {
+          fetchQuestionData();
+        }, 5000);
+      }
+      startCode = response.submit_info.code.replace(/\\n/g, "\n");
+    } else {
+      startCode = response.start_code.replace(/\\n/g, "\n");
+    }
+    setCode(startCode);
+
     setNavigation(
       [
         {
