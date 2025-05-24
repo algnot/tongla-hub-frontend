@@ -321,12 +321,14 @@ export default function Page({ params }: PageProps) {
                   </Select>
                 </div>
               </div>
-              <MarkdownComponent
-                preview="edit"
-                editable={false}
-                content={description}
-                onChange={setDescription}
-              />
+              <div className="mt-4">
+                <MarkdownComponent
+                  preview="edit"
+                  editable={false}
+                  content={description}
+                  onChange={setDescription}
+                />
+              </div>
             </>
           )}
 

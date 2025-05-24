@@ -81,8 +81,39 @@ body {
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
+
 .kungfu{
   color: red
+}
+
+.w-md-editor {
+  background-color: var(--background) !important;
+  color: hsl(var(--primary)) !important;
+}
+
+.w-md-editor * {
+  color: hsl(var(--primary)) !important;
+}
+
+.wmde-markdown {
+  background-color: var(--background) !important;
+  color: hsl(var(--primary)) !important;
+}
+
+.wmde-markdown-color{
+  color: hsl(var(--primary)) !important;
+}
+
+.w-md-editor-text-input {
+  color: hsl(var(--primary)) !important;
+}
+
+.w-md-editor-toolbar li > button * {
+  color: white !important;
+}
+
+.code-highlight * {
+  color: white !important;
 }
 
 @layer base {
