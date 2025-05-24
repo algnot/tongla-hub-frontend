@@ -10,7 +10,7 @@ import MarkdownComponent from "@/components/mark-down";
 import { useHelperContext } from "@/components/provider/helper-provider";
 import { isErrorResponse } from "@/types/payload";
 import { useNavigateContext } from "@/components/provider/navigation-provider";
-import { Question, TestCase } from "@/types/request";
+import { Question } from "@/types/request";
 
 type PageProps = {
   params: Promise<{ problems_id: string }>;
