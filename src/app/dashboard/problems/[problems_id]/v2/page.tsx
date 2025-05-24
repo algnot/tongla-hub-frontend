@@ -101,15 +101,20 @@ export default function Page({ params }: PageProps) {
       <ResizableLayout
         direction="horizontal"
         first={
-          <MarkdownComponent
-            editable={false}
-            preview="preview"
-            content={`${
-              "## " + (questionData?.title ?? "Problems " + problems_id)
-            }\n ${questionData?.description ?? ""}`}
-            height="calc(100vh - 64px)"
-            hideToolbar
-          />
+          <div>
+            <div className="bg-[hsl(var(--editor-background))] h-[45px] flex items-end justify-between">
+              <div className="bg-[hsl(var(--code-background))] h-[40px] w-fit px-4 py-2 rounded-t-md text-sm font-bold flex justify-center items-center">
+                {questionData?.title}
+              </div>
+            </div>
+            <MarkdownComponent
+              editable={false}
+              preview="preview"
+              content={`${questionData?.description ?? ""}`}
+              height="calc(100vh - 64px - 45px)"
+              hideToolbar
+            />
+          </div>
         }
         second={
           <ResizableLayout
@@ -175,7 +180,7 @@ export default function Page({ params }: PageProps) {
                   {activeTab === "output" ? (
                     <pre
                       id="output"
-                      className="w-full border-t-2 p-2 overflow-y-auto whitespace-pre-wrap text-sm border-none"
+                      className="w-full border-t-2 p-2 overflow-y-auto whitespace-pre-wrap text-sm border-none bg-[hsl(var(--code-background))]"
                       style={{
                         height: `calc(100vh - ${editorHeight}px - 64px - 45px)`,
                       }}

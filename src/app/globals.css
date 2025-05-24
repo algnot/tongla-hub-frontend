@@ -44,12 +44,13 @@ body {
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
   .dark {
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
     --card: 0 0% 3.9%;
     --editor-background: 0 0% 3.9%;
-    --code-background: 210 10% 16%;
+    --code-background: 213 13% 16%;
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 3.9%;
     --popover-foreground: 0 0% 98%;
@@ -82,13 +83,20 @@ body {
   }
 }
 
-.kungfu{
+.kungfu {
   color: red
 }
 
 .w-md-editor {
-  background-color: var(--background) !important;
+  background-color: hsl(var(--code-background)) !important;
   color: hsl(var(--primary)) !important;
+  border: none !important;
+  border-radius: 0px !important;
+  box-shadow: none !important;
+}
+
+.ace-github-dark {
+  background-color: hsl(var(--code-background)) !important;
 }
 
 .w-md-editor * {
@@ -96,19 +104,15 @@ body {
 }
 
 .wmde-markdown {
-  background-color: var(--background) !important;
+  background-color: hsl(var(--code-background)) !important;
   color: hsl(var(--primary)) !important;
 }
 
-.wmde-markdown-color{
+.wmde-markdown-color {
   color: hsl(var(--primary)) !important;
 }
 
-.w-md-editor-text-input {
-  color: hsl(var(--primary)) !important;
-}
-
-.w-md-editor-toolbar li > button * {
+.w-md-editor-toolbar li>button * {
   color: white !important;
 }
 
@@ -116,10 +120,29 @@ body {
   color: white !important;
 }
 
+.language-markdown * {
+  color: hsl(var(--primary)) !important;
+}
+
+.wmde-markdown h1 {
+  border-bottom: 1px solid hsl(var(--primary)) !important;
+}
+
+.wmde-markdown h2 {
+  border-bottom: 1px solid hsl(var(--primary)) !important;
+}
+
+.w-md-editor-show-preview .w-md-editor-preview {
+  box-shadow: none !important;
+  border: none;
+}
+
+
 @layer base {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
