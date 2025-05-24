@@ -78,8 +78,8 @@ export default function ResizableSplitLayout({
       <div
         className={`flex flex-col w-full h-auto overflow-auto ${className}`}
       >
-        <div className="w-full">{first}</div>
-        <div className="w-full">{second}</div>
+        <div className="w-full my-4">{first}</div>
+        <div className="w-full my-4">{second}</div>
       </div>
     );
   }
