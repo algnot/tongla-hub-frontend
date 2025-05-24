@@ -2,6 +2,7 @@
 "use client";
 
 import { useRef, useState, ReactNode, useEffect } from "react";
+import { useMediaQuery } from "react-responsive";
 
 type ResizableLayoutProps = {
   first: ReactNode;
@@ -69,6 +70,19 @@ export default function ResizableSplitLayout({
       window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [direction]);
+
+  const isDesktop = useMediaQuery({ minWidth: 768 });
+
+  if (!isDesktop) {
+    return (
+      <div
+        className={`flex flex-col w-full h-auto overflow-auto ${className}`}
+      >
+        <div className="w-full">{first}</div>
+        <div className="w-full">{second}</div>
+      </div>
+    );
+  }
 
   return (
     <div
