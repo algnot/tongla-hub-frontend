@@ -5,12 +5,12 @@ import { useSidebar } from "@/components/ui/sidebar";
 import ResizableLayout from "@/components/resizable-layout";
 import CodeEditor from "@/components/coding-editor";
 import { Button } from "@/components/ui/button";
-import { Play } from "lucide-react";
+import { LucideBeaker, Play } from "lucide-react";
 import MarkdownComponent from "@/components/mark-down";
 import { useHelperContext } from "@/components/provider/helper-provider";
 import { isErrorResponse } from "@/types/payload";
 import { useNavigateContext } from "@/components/provider/navigation-provider";
-import { Question } from "@/types/request";
+import { Question, TestCase } from "@/types/request";
 
 type PageProps = {
   params: Promise<{ problems_id: string }>;
@@ -96,6 +96,51 @@ export default function Page({ params }: PageProps) {
     );
   };
 
+  const runTests = async () => {
+    if (codeRuning) return;
+
+    setActiveTab("output");
+    setCodeRuning(true);
+
+    let message = "";
+
+    const testCases = questionData?.test_cases ?? [];
+
+    let correct = 0
+    let fail = 0
+    for (let index = 0; index < testCases.length; index++) {
+      const testCase = testCases[index];
+      const response = await backendClient.executeCode({
+        code,
+        stdin: testCase.input,
+      });
+
+      if (isErrorResponse(response)) {
+        continue;
+      }
+
+      const output = response.stderr ? response.stderr : response.stdout;
+      if (output === testCase.expected) {
+        correct += 1;
+      } else {
+        fail += 1;
+      }
+
+      message += `Test Case ${index + 1}: ${
+        output === testCase.expected ? "Passed ✅" : "failed ❌"
+      } \n>>> Input:\n${
+        testCase.input
+      }\n---\n>>> Output:\n${output}---\n>>> Matches the expected output:\n${
+        testCase.expected
+      }=========\n\n`;
+    }
+
+    message = `==== Result ====\n${correct}/${fail + correct} (${((correct / (fail + correct)) * 100)}%)\n\n` + message
+
+    setStdout(message);
+    setCodeRuning(false);
+  };
+
   return (
     <div>
       <ResizableLayout
@@ -126,6 +171,17 @@ export default function Page({ params }: PageProps) {
                 <div className="bg-[hsl(var(--editor-background))] h-[45px] flex items-end justify-between">
                   <div className="bg-[hsl(var(--code-background))] h-[40px] w-fit px-4 py-2 rounded-t-md text-sm font-bold flex justify-center items-center">
                     main.py
+                  </div>
+                  <div className="h-[45px] flex justify-center items-center mr-2">
+                    <Button
+                      className="h-[30px]"
+                      onClick={runTests}
+                      disabled={codeRuning}
+                      type="button"
+                    >
+                      <LucideBeaker className="w-4 h-4" />
+                      run tests
+                    </Button>
                   </div>
                 </div>
 
@@ -170,7 +226,7 @@ export default function Page({ params }: PageProps) {
                       disabled={codeRuning}
                       type="button"
                     >
-                      <Play className="w-4 h-4 mr-1" />
+                      <Play className="w-4 h-4" />
                       run
                     </Button>
                   </div>
