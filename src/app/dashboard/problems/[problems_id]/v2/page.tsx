@@ -1,11 +1,11 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { useSidebar } from "@/components/ui/sidebar";
 import ResizableLayout from "@/components/resizable-layout";
 import CodeEditor from "@/components/coding-editor";
 import { Button } from "@/components/ui/button";
-import { LucideBeaker, Play } from "lucide-react";
+import { LucideBeaker, Play, Send } from "lucide-react";
 import MarkdownComponent from "@/components/mark-down";
 import { useHelperContext } from "@/components/provider/helper-provider";
 import { isErrorResponse } from "@/types/payload";
@@ -21,20 +21,21 @@ export default function Page({ params }: PageProps) {
   const setNavigation = useNavigateContext();
   const { backendClient, setFullLoading } = useHelperContext()();
 
-  const [questionData, setQuestionData] = useState<Question | null>(null);
-  const [code, setCode] = useState<string>("print('hellp world')\n");
-  const [stdin, setStdin] = useState<string>("");
   const [stdout, setStdout] = useState<string>("PyDev console: starting");
-
   const [codeRuning, setCodeRuning] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<"output" | "input">("output");
   const { setOpen } = useSidebar();
   const [editorHeight, setEditorHeight] = useState<number>(500);
 
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const [questionData, setQuestionData] = useState<Question | null>(null);
+
   useEffect(() => {
-    setOpen(false);
-    fetchQuestionData();
-  }, []);
+    if (!questionData) {
+      setOpen(false);
+      fetchQuestionData();
+    }
+  }, [questionData]);
 
   const fetchQuestionData = async () => {
     setFullLoading(true);
@@ -45,20 +46,6 @@ export default function Page({ params }: PageProps) {
     }
 
     setQuestionData(response);
-    setStdin(response.test_cases[0].input);
-
-    let startCode = "";
-    if (response.submit_info.id != 0) {
-      if (response.submit_info.status == "PENDING") {
-        setTimeout(() => {
-          fetchQuestionData();
-        }, 5000);
-      }
-      startCode = response.submit_info.code.replace(/\\n/g, "\n");
-    } else {
-      startCode = response.start_code.replace(/\\n/g, "\n");
-    }
-    setCode(startCode);
 
     setNavigation(
       [
@@ -77,6 +64,10 @@ export default function Page({ params }: PageProps) {
     }
     setActiveTab("output");
     setCodeRuning(true);
+
+    const form = formRef.current;
+    const code = form?.formCode?.value ?? "";
+    const stdin = form?.formStdin?.value ?? "";
     const response = await backendClient.executeCode({
       code,
       stdin,
@@ -98,16 +89,18 @@ export default function Page({ params }: PageProps) {
 
   const runTests = async () => {
     if (codeRuning) return;
+    const form = formRef.current;
+    const code = form?.formCode?.value ?? "";
 
     setActiveTab("output");
     setCodeRuning(true);
 
     let message = "";
+    let correct = 0;
+    let fail = 0;
 
     const testCases = questionData?.test_cases ?? [];
 
-    let correct = 0
-    let fail = 0
     for (let index = 0; index < testCases.length; index++) {
       const testCase = testCases[index];
       const response = await backendClient.executeCode({
@@ -135,14 +128,17 @@ export default function Page({ params }: PageProps) {
       }=========\n\n`;
     }
 
-    message = `==== Result ====\n${correct}/${fail + correct} (${((correct / (fail + correct)) * 100)}%)\n\n` + message
+    message =
+      `==== Result ====\n${correct}/${fail + correct} (${
+        (correct / (fail + correct)) * 100
+      }%)\n\n` + message;
 
     setStdout(message);
     setCodeRuning(false);
   };
 
   return (
-    <div>
+    <form ref={formRef}>
       <ResizableLayout
         direction="horizontal"
         first={
@@ -179,18 +175,23 @@ export default function Page({ params }: PageProps) {
                       disabled={codeRuning}
                       type="button"
                     >
-                      <LucideBeaker className="w-4 h-4" />
-                      run tests
+                      <Send className="w-4 h-4" />
+                      submit
                     </Button>
                   </div>
                 </div>
-
-                <CodeEditor
-                  className="h-full"
-                  height={`calc(${editorHeight}px - 45px)`}
-                  value={code}
-                  onChange={setCode}
-                />
+                {questionData && (
+                  <CodeEditor
+                    id="formCode"
+                    className="h-full"
+                    height={`calc(${editorHeight}px - 45px)`}
+                    defaultValue={
+                      questionData?.submitted == 1
+                        ? questionData.submit_info.code.replace(/\\n/g, "\n")
+                        : questionData.start_code.replace(/\\n/g, "\n")
+                    }
+                  />
+                )}
               </div>
             }
             second={
@@ -198,6 +199,7 @@ export default function Page({ params }: PageProps) {
                 <div className="bg-[hsl(var(--editor-background))] h-[45px] flex items-end justify-between">
                   <div className="flex">
                     <button
+                      type="button"
                       onClick={() => setActiveTab("output")}
                       className={`h-[40px] w-fit px-4 py-2 rounded-t-md text-sm font-bold flex justify-center items-center ${
                         activeTab === "output"
@@ -208,6 +210,7 @@ export default function Page({ params }: PageProps) {
                       output
                     </button>
                     <button
+                      type="button"
                       onClick={() => setActiveTab("input")}
                       className={`h-[40px] w-fit px-4 py-2 rounded-t-md text-sm font-bold flex justify-center items-center ${
                         activeTab === "input"
@@ -219,7 +222,16 @@ export default function Page({ params }: PageProps) {
                     </button>
                   </div>
 
-                  <div className="h-[45px] flex justify-center items-center mr-2">
+                  <div className="h-[45px] flex justify-center items-center mr-2 gap-2">
+                    <Button
+                      className="h-[30px]"
+                      onClick={runTests}
+                      disabled={codeRuning}
+                      type="button"
+                    >
+                      <LucideBeaker className="w-4 h-4" />
+                      run tests
+                    </Button>
                     <Button
                       className="h-[30px]"
                       onClick={handleRun}
@@ -233,7 +245,7 @@ export default function Page({ params }: PageProps) {
                 </div>
 
                 <div>
-                  {activeTab === "output" ? (
+                  {activeTab === "output" && (
                     <pre
                       id="output"
                       className="w-full border-t-2 p-2 overflow-y-auto whitespace-pre-wrap text-sm border-none bg-[hsl(var(--code-background))]"
@@ -250,20 +262,21 @@ export default function Page({ params }: PageProps) {
                         stdout
                       )}
                     </pre>
-                  ) : (
-                    <CodeEditor
-                      className="h-full"
-                      height={`calc(100vh - ${editorHeight}px - 64px - 45px)`}
-                      value={stdin}
-                      onChange={setStdin}
-                    />
                   )}
+                  <CodeEditor
+                    className={`h-full ${
+                      activeTab === "input" ? "block" : "hidden"
+                    }`}
+                    height={`calc(100vh - ${editorHeight}px - 64px - 45px)`}
+                    defaultValue={questionData?.test_cases[0]?.input ?? ""}
+                    id="formStdin"
+                  />
                 </div>
               </div>
             }
           />
         }
       />
-    </div>
+    </form>
   );
 }

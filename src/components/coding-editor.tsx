@@ -9,20 +9,25 @@ import "ace-builds/src-noconflict/theme-github";
 import "ace-builds/src-noconflict/theme-github_dark";
 
 interface CodeEditorProps {
-  className?: string;
+  value?: string;
+  id?: string;
+  defaultValue?: string;
   height?: string;
-  value: string;
-  onChange: (code: string) => void;
+  className?: string;
+  onChange?: (code: string) => void;
 }
 
 const CodeEditor: React.FC<CodeEditorProps> = ({
   className,
   value,
+  defaultValue,
+  id,
   onChange,
   height,
 }) => {
   const { theme } = useTheme();
   const [aceTheme, setAceTheme] = useState<string>("github");
+  const [code, setCode] = useState("");
 
   useEffect(() => {
     if (theme === "dark") {
@@ -32,31 +37,46 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
     }
   }, [theme]);
 
+  useEffect(() => {
+    if (defaultValue) {
+      handleOnChange(defaultValue);
+    }
+    if (value) {
+      handleOnChange(value);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultValue]);
+
   const handleOnChange = (code: string) => {
-    onChange(code);
+    onChange?.(code);
+    setCode(code);
   };
 
   return (
-    <AceEditor
-      mode="python"
-      theme={aceTheme}
-      name="code_editor"
-      width="100%"
-      height={height ?? "500px"}
-      value={value}
-      onChange={(value) => {
-        handleOnChange(value);
-      }}
-      setOptions={{
-        enableBasicAutocompletion: true,
-        enableLiveAutocompletion: true,
-        autoScrollEditorIntoView: true,
-        showLineNumbers: true,
-        enableMultiselect: true,
-      }}
-      className={className}
-      fontSize={14}
-    />
+    <>
+      <AceEditor
+        mode="python"
+        theme={aceTheme}
+        name="code_editor"
+        width="100%"
+        height={height ?? "500px"}
+        defaultValue={defaultValue}
+        value={code}
+        onChange={(value) => {
+          handleOnChange(value);
+        }}
+        setOptions={{
+          enableBasicAutocompletion: true,
+          enableLiveAutocompletion: true,
+          autoScrollEditorIntoView: true,
+          showLineNumbers: true,
+          enableMultiselect: true,
+        }}
+        className={className}
+        fontSize={14}
+      />
+      <textarea value={code} id={id} name={id} style={{ display: "none" }} />
+    </>
   );
 };
 
