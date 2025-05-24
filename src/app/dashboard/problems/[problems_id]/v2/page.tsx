@@ -175,7 +175,7 @@ export default function Page({ params }: PageProps) {
                   {activeTab === "output" ? (
                     <pre
                       id="output"
-                      className="w-full border-t-2 p-2 overflow-y-auto whitespace-pre-wrap text-sm"
+                      className="w-full border-t-2 p-2 overflow-y-auto whitespace-pre-wrap text-sm border-none"
                       style={{
                         height: `calc(100vh - ${editorHeight}px - 64px - 45px)`,
                       }}
