@@ -601,7 +601,7 @@ export default function Page({ params }: PageProps) {
                   %)
                 </div>
                 <div className="max-h-[550px] h-[550px] overflow-y-scroll">
-                  {questionData?.submit_info.info.map((value, index) => {
+                  {/* {questionData?.submit_info.info.map((value, index) => {
                     return (
                       <TestCaseComponent
                         key={index}
@@ -621,7 +621,7 @@ export default function Page({ params }: PageProps) {
                         loading={false}
                       />
                     );
-                  })}
+                  })} */}
                 </div>
                 <div className="flex justify-end mt-4">
                   <Button
