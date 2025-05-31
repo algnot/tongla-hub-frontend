@@ -19,11 +19,14 @@ type PageProps = {
 export default function Page({ params }: PageProps) {
   const { problems_id } = use(params);
   const setNavigation = useNavigateContext();
-  const { backendClient, setFullLoading } = useHelperContext()();
+  const { backendClient, setFullLoading, setAlert } = useHelperContext()();
 
   const [stdout, setStdout] = useState<string>("PyDev console: starting");
   const [codeRuning, setCodeRuning] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<"output" | "input">("output");
+  const [submiting, setSubmiting] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<"output" | "input" | "submit">(
+    "output",
+  );
   const { setOpen } = useSidebar();
   const [editorHeight, setEditorHeight] = useState<number>(500);
 
@@ -46,7 +49,10 @@ export default function Page({ params }: PageProps) {
     }
 
     setQuestionData(response);
-
+    setSubmiting(response.submit_info.status == "PENDING");
+    if (response.submit_info.status == "FINISH") {
+      setActiveTab("submit");
+    }
     setNavigation(
       [
         {
@@ -137,6 +143,33 @@ export default function Page({ params }: PageProps) {
     setCodeRuning(false);
   };
 
+  const onSubmit = async () => {
+    setSubmiting(true);
+    setAlert(
+      "Confirm Submit",
+      "Do you want to submit this code?",
+      async () => {
+        setFullLoading(true);
+        const form = formRef.current;
+        const code = form?.formCode?.value ?? "";
+        const response = await backendClient.submitCode({
+          question_id: parseInt(problems_id),
+          code,
+        });
+
+        if (isErrorResponse(response)) {
+          setFullLoading(false);
+          setAlert("Error", response.message, 0, true);
+          return;
+        }
+
+        setFullLoading(false);
+        fetchQuestionData();
+      },
+      true,
+    );
+  };
+
   return (
     <form ref={formRef}>
       <ResizableLayout
@@ -171,12 +204,18 @@ export default function Page({ params }: PageProps) {
                   <div className="h-[45px] flex justify-center items-center mr-2">
                     <Button
                       className="h-[30px]"
-                      onClick={runTests}
-                      disabled={codeRuning}
+                      onClick={onSubmit}
+                      disabled={submiting}
                       type="button"
                     >
-                      <Send className="w-4 h-4" />
-                      submit
+                      {submiting ? (
+                        <>pending submit..</>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          submit
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -220,6 +259,19 @@ export default function Page({ params }: PageProps) {
                     >
                       input
                     </button>
+                    {questionData?.submitted && (
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("submit")}
+                        className={`h-[40px] w-fit px-4 py-2 rounded-t-md text-sm font-bold flex justify-center items-center ${
+                          activeTab === "submit"
+                            ? "bg-[hsl(var(--code-background))]"
+                            : ""
+                        }`}
+                      >
+                        submit
+                      </button>
+                    )}
                   </div>
 
                   <div className="h-[45px] flex justify-center items-center mr-2 gap-2">
@@ -245,7 +297,7 @@ export default function Page({ params }: PageProps) {
                 </div>
 
                 <div>
-                  {activeTab === "output" && (
+                  {(activeTab === "output" || activeTab === "submit") && (
                     <pre
                       id="output"
                       className="w-full border-t-2 p-2 overflow-y-auto whitespace-pre-wrap text-sm border-none bg-[hsl(var(--code-background))]"
@@ -258,8 +310,10 @@ export default function Page({ params }: PageProps) {
                           <div className="w-4 h-4 border-4 border-t-transparent border-blue-500 border-solid rounded-full animate-spin"></div>
                           <span>Loading...</span>
                         </div>
-                      ) : (
+                      ) : activeTab === "output" ? (
                         stdout
+                      ) : (
+                        questionData?.submit_info.info
                       )}
                     </pre>
                   )}

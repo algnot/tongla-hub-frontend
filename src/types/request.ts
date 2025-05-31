@@ -74,7 +74,7 @@ export interface SubmitInfo {
   max_score: number;
   score: number;
   status: "PENDING" | "FINISH";
-  info: SubmitInfoInfo[];
+  info: string;
 }
 
 export interface SubmitCodeRequest {
