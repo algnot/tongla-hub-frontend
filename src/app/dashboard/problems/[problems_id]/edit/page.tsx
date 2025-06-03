@@ -220,7 +220,7 @@ export default function Page({ params }: PageProps) {
       return;
     }
 
-    window.location.href = `/dashboard/problems/${response.id}`;
+    window.location.href = `/dashboard/problems/${response.id}/edit`;
   };
 
   return (
@@ -242,17 +242,16 @@ export default function Page({ params }: PageProps) {
               Answer Code
             </Button>
           </div>
-          {leftActiveTab === "startCode" ? (
-            <CodeEditor
-              value={startCode}
+          <CodeEditor
+              className={`${leftActiveTab === "startCode" ? "block" : "hidden"}`}
+              defaultValue={startCode}
               onChange={(newCode) => setStartCode(newCode)}
-            />
-          ) : (
-            <CodeEditor
-              value={answerCode}
+          />
+          <CodeEditor
+              className={`${leftActiveTab !== "startCode" ? "block" : "hidden"}`}
+              defaultValue={answerCode}
               onChange={(newCode) => setAnswerCode(newCode)}
             />
-          )}
         </div>
 
         {/* right component */}

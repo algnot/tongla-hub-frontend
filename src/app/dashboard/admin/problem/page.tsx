@@ -34,7 +34,7 @@ export default function Page() {
           { key: "submitted", label: "submitted" },
           { key: "is_public", label: "Is Public?" },
         ]}
-        href="/dashboard/problems/"
+        href="/dashboard/problems/{}/edit"
         navigateKey="id"
         isSearchable
       />

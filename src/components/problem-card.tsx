@@ -26,7 +26,7 @@ export default function ProblemCard({ problem }: ProblemCardProps) {
 
   return (
     <Link
-      href={`/dashboard/problems/${problem.id}/v2`}
+      href={`/dashboard/problems/${problem.id}`}
       className="p-5 border rounded-md cursor-pointer flex justify-between items-center mb-3"
     >
       <div>

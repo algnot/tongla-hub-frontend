@@ -1,106 +1,58 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
+import { use, useEffect, useRef, useState } from "react";
+import { useSidebar } from "@/components/ui/sidebar";
+import ResizableLayout from "@/components/resizable-layout";
 import CodeEditor from "@/components/coding-editor";
-import MarkdownComponent from "@/components/mark-down";
-import { useLoadingContext } from "@/components/provider/loading-provider";
-import { useNavigateContext } from "@/components/provider/navigation-provider";
-import TestCaseComponent, { TestCaseProps } from "@/components/test-case";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { isErrorResponse } from "@/types/payload";
-import { Question } from "@/types/request";
-import { v4 as uuidv4 } from "uuid";
-import { RefreshCw } from "lucide-react";
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { getItem, removeItem, setItem } from "@/lib/storage";
+import { LucideBeaker, Play, Send } from "lucide-react";
+import MarkdownComponent from "@/components/mark-down";
 import { useHelperContext } from "@/components/provider/helper-provider";
+import { isErrorResponse } from "@/types/payload";
+import { useNavigateContext } from "@/components/provider/navigation-provider";
+import { Question } from "@/types/request";
 
 type PageProps = {
-  params: Promise<{ problems_id: string[] }>;
+  params: Promise<{ problems_id: string }>;
 };
 
 export default function Page({ params }: PageProps) {
-  const { backendClient, setAlert, userData } = useHelperContext()();
+  const { problems_id } = use(params);
   const setNavigation = useNavigateContext();
-  const [questionData, setQuestionData] = useState<Question | null>(null);
-  const [testCase, setTestCase] = useState<TestCaseProps[]>([]);
-  const setFullLoading = useLoadingContext();
+  const { backendClient, setFullLoading, setAlert } = useHelperContext()();
 
-  const [problemId, setProblemId] = useState<string>("");
-  const [code, setCode] = useState<string>("");
-  const [stdin, setStdin] = useState<string>("");
   const [stdout, setStdout] = useState<string>("PyDev console: starting");
+  const [codeRuning, setCodeRuning] = useState<boolean>(false);
+  const [submiting, setSubmiting] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<"output" | "input" | "submit">(
+    "output",
+  );
+  const { setOpen } = useSidebar();
+  const [editorHeight, setEditorHeight] = useState<number>(500);
 
-  const [loading, setLoading] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<
-    "detail" | "customInput" | "testCase" | "yourSubmit"
-  >("detail");
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const [questionData, setQuestionData] = useState<Question | null>(null);
 
-  const [isSessionStart, setIsSessionStart] = useState<boolean>(false);
-
-  const fetchQuestionData = async (forceReload: boolean) => {
-    const { problems_id } = await params;
-    const problemId = Array.isArray(problems_id) ? problems_id[0] : problems_id;
-    setProblemId(problemId);
-    if (!forceReload) {
-      setFullLoading(true);
+  useEffect(() => {
+    if (!questionData) {
+      setOpen(false);
+      fetchQuestionData();
     }
+  }, [questionData]);
 
-    const response = await backendClient.getQuestionById(problemId);
+  const fetchQuestionData = async () => {
+    setFullLoading(true);
+    const response = await backendClient.getQuestionById(problems_id);
+    setFullLoading(false);
     if (isErrorResponse(response)) {
-      setAlert("Error", response.message, 0, true);
-      setLoading(false);
       return;
     }
 
-    let testCaseList: TestCaseProps[] = [];
-    let count = 1;
-    for (const testCase of response.test_cases.slice(0, 3)) {
-      testCaseList = [
-        ...testCaseList,
-        {
-          expected: testCase,
-          test_name: `Case ${count++}`,
-        },
-      ];
-    }
-    setTestCase(testCaseList);
-    let startCode = "";
-    if (response.submit_info.id != 0) {
-      if (response.submit_info.status == "PENDING") {
-        setTimeout(() => {
-          fetchQuestionData(true);
-        }, 5000);
-      }
-      startCode = response.submit_info.code.replace(/\\n/g, "\n");
-      setActiveTab("yourSubmit");
-    } else {
-      startCode = response.start_code.replace(/\\n/g, "\n");
-    }
-    onChangeCode(startCode);
     setQuestionData(response);
-    setStdin(response.test_cases[0].input);
-    setFullLoading(false);
-
-    const sessionId = getItem("sessionId");
-    if (sessionId) {
-      handleSwitchSession(
-        startCode,
-        response?.title ?? "",
-        response?.description ?? "",
-        response.test_cases[0].input
-      );
+    setSubmiting(response.submit_info.status == "PENDING");
+    if (response.submit_info.status == "FINISH") {
+      setActiveTab("submit");
     }
-
-    startInitSession(
-      startCode,
-      response?.title ?? "",
-      response?.description ?? "",
-      response.test_cases[0].input
-    );
-
     setNavigation(
       [
         {
@@ -108,91 +60,101 @@ export default function Page({ params }: PageProps) {
           path: "/dashboard/problems",
         },
       ],
-      response.title
+      response.title,
     );
   };
 
   const handleRun = async () => {
-    setLoading(true);
+    if (codeRuning) {
+      return;
+    }
+    setActiveTab("output");
+    setCodeRuning(true);
+
+    const form = formRef.current;
+    const code = form?.formCode?.value ?? "";
+    const stdin = form?.formStdin?.value ?? "";
     const response = await backendClient.executeCode({
       code,
       stdin,
     });
+    setCodeRuning(false);
     if (isErrorResponse(response)) {
-      setAlert("Error", response.message, 0, true);
-      setLoading(false);
       return;
     }
     if (response.stderr) {
       setStdout(
-        `Error! run time ${response.runtime} ${response.runtime_unit}\n\noutput:\n${response.stderr}`
+        `Error! run time ${response.runtime} ${response.runtime_unit}\n\noutput:\n${response.stderr}`,
       );
-      setLoading(false);
       return;
     }
     setStdout(
-      `Success! run time ${response.runtime} ${response.runtime_unit}\n\noutput:\n${response.stdout}`
+      `Success! run time ${response.runtime} ${response.runtime_unit}\n\noutput:\n${response.stdout}`,
     );
-    setLoading(false);
   };
 
-  const handleRunAllTestCase = async () => {
-    const testCases = questionData?.test_cases?.slice(0, 3);
-    setLoading(true);
+  const runTests = async () => {
+    if (codeRuning) return;
+    const form = formRef.current;
+    const code = form?.formCode?.value ?? "";
 
-    if (!testCases) return;
+    setActiveTab("output");
+    setCodeRuning(true);
 
-    let result: TestCaseProps[] = [];
-    let count = 1;
-    for (const testCase of testCases) {
+    let message = "";
+    let correct = 0;
+    let fail = 0;
+
+    const testCases = questionData?.test_cases ?? [];
+
+    for (let index = 0; index < testCases.length; index++) {
+      const testCase = testCases[index];
       const response = await backendClient.executeCode({
         code,
         stdin: testCase.input,
       });
 
       if (isErrorResponse(response)) {
-        setAlert("Error", response.message, 0, true);
-        setLoading(false);
-        return;
+        continue;
       }
 
-      let output = response.stdout != "" ? response.stdout : response.stderr;
-      if (response.runtime > testCase.expected_run_time_ms) {
-        output = `Run time not pass\nExpected: ${testCase.expected_run_time_ms}ms\nUsed: ${response.runtime}ms`;
+      const output = response.stderr ? response.stderr : response.stdout;
+      if (output === testCase.expected) {
+        correct += 1;
+      } else {
+        fail += 1;
       }
-      result = [
-        ...result,
-        {
-          expected: testCase,
-          test_name: `Case ${count++}`,
-          output: {
-            output: output,
-            run_time_ms: response.runtime,
-          },
-        },
-      ];
+
+      message += `Test Case ${index + 1}: ${
+        output === testCase.expected ? "Passed ✅" : "failed ❌"
+      } \n>>> Input:\n${
+        testCase.input
+      }\n---\n>>> Output:\n${output}---\n>>> Matches the expected output:\n${
+        testCase.expected
+      }=========\n\n`;
     }
-    setTestCase(result);
-    setLoading(false);
+
+    message =
+      `==== Result ====\n${correct}/${fail + correct} (${
+        (correct / (fail + correct)) * 100
+      }%)\n\n` + message;
+
+    setStdout(message);
+    setCodeRuning(false);
   };
 
-  const onFillAnswer = () => {
-    onChangeCode(questionData?.answer_code ?? "");
-  };
-
-  const onFillStartCode = () => {
-    onChangeCode(questionData?.start_code ?? "");
-  };
-
-  const onSubmitCode = () => {
+  const onSubmit = async () => {
+    setSubmiting(true);
     setAlert(
       "Confirm Submit",
       "Do you want to submit this code?",
       async () => {
         setFullLoading(true);
+        const form = formRef.current;
+        const code = form?.formCode?.value ?? "";
         const response = await backendClient.submitCode({
-          question_id: parseInt(problemId),
-          code: code,
+          question_id: parseInt(problems_id),
+          code,
         });
 
         if (isErrorResponse(response)) {
@@ -201,450 +163,174 @@ export default function Page({ params }: PageProps) {
           return;
         }
 
-        setAlert(
-          "Submited",
-          "your code is submitted",
-          async () => {
-            setFullLoading(false);
-            fetchQuestionData(false);
-          },
-          false
-        );
+        setFullLoading(false);
+        fetchQuestionData();
       },
-      true
+      true,
     );
-  };
-
-  useEffect(() => {
-    fetchQuestionData(false);
-    setNavigation(
-      [
-        {
-          name: "All Problems",
-          path: "/dashboard/problems",
-        },
-      ],
-      ""
-    );
-  }, [problemId]);
-
-  useEffect(() => {
-    startInitSession(
-      code,
-      questionData?.title ?? "",
-      questionData?.description ?? "",
-      stdin
-    );
-  }, [userData]);
-
-  const handleCopy = () => {
-    navigator.clipboard
-      .writeText(window.location.host + "/code-with-friend/" + channelId)
-      .catch((err) => {
-        console.error("Error copying text: ", err);
-      });
-  };
-
-  // web socket module
-  const [ws, setWs] = useState<WebSocket | null>(null);
-  const [ws2, setWs2] = useState<WebSocket | null>(null);
-  const [channelId, setChannelId] = useState<string>("");
-  const [socketUserId, setSocketUserId] = useState<string>("");
-  const startSession = (
-    initCode: string,
-    title: string,
-    description: string,
-    stdin: string
-  ) => {
-    let channelId = uuidv4();
-    const sessionId = getItem("sessionId");
-    if (sessionId) {
-      channelId = sessionId;
-    } else {
-      setItem("sessionId", channelId);
-    }
-    const socketId = uuidv4();
-    setChannelId(channelId);
-    setSocketUserId(socketId);
-    const socket = new WebSocket(
-      `${process.env.NEXT_PUBLIC_SOCKET_PATH}/${channelId}`
-    );
-
-    socket.onmessage = (event) => {
-      const { codeChange, userId, action } = JSON.parse(event.data);
-      if (userId == socketId) {
-        return;
-      }
-      if (action == "changeCode") {
-        setCode(codeChange);
-      } else if (action == "connected") {
-        socket.send(
-          JSON.stringify({
-            action: "initCode",
-            userId: socketId,
-            codeChange: initCode,
-            description: description,
-            title: title,
-            stdin: stdin,
-          })
-        );
-      }
-    };
-    socket.onerror = () => {
-      setAlert(
-        "Code with friend error :(",
-        "Code with friend is disconnected",
-        0,
-        true
-      );
-    };
-    socket.onclose = () => {
-      setAlert(
-        "Code with friend disconnected",
-        "Code with friend is disconnected",
-        0,
-        true
-      );
-      setChannelId("");
-      setIsSessionStart(false);
-      setSocketUserId("");
-      removeItem("sessionId");
-    };
-    setWs(socket);
-  };
-
-  const startInitSession = (
-    initCode: string,
-    title: string,
-    description: string,
-    stdin: string
-  ) => {
-    const channelId = `${userData?.username}-${userData?.uid}`;
-
-    if (!channelId || !userData?.username) {
-      return;
-    }
-
-    const socketId = uuidv4();
-    const socket = new WebSocket(
-      `${process.env.NEXT_PUBLIC_SOCKET_PATH}/${channelId}`
-    );
-
-    socket.onmessage = (event) => {
-      const { codeChange, userId, action } = JSON.parse(event.data);
-      if (userId == socketId) {
-        return;
-      }
-      if (action == "changeCode") {
-        setCode(codeChange);
-      } else if (action == "connected") {
-        socket.send(
-          JSON.stringify({
-            action: "initCode",
-            userId: socketId,
-            codeChange: initCode,
-            description: description,
-            title: title,
-            stdin: stdin,
-          })
-        );
-      }
-    };
-    setWs2(socket);
-  };
-
-  const onChangeCode = (value: string) => {
-    setCode(value);
-  };
-
-  useEffect(() => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(
-        JSON.stringify({
-          action: "changeCode",
-          userId: socketUserId,
-          codeChange: code,
-          description: questionData?.description,
-          title: questionData?.title,
-          stdin: stdin,
-        })
-      );
-    }
-
-    if (ws2 && ws2.readyState === WebSocket.OPEN) {
-      ws2.send(
-        JSON.stringify({
-          action: "changeCode",
-          userId: socketUserId,
-          codeChange: code,
-          description: questionData?.description,
-          title: questionData?.title,
-          stdin: stdin,
-        })
-      );
-    }
-  }, [
-    code,
-    ws,
-    ws2,
-    questionData?.description,
-    questionData?.title,
-    stdin,
-    socketUserId,
-  ]);
-
-  const handleSwitchSession = (
-    initCode: string,
-    title: string,
-    description: string,
-    stdin: string
-  ) => {
-    if (!isSessionStart) {
-      startSession(initCode, title, description, stdin);
-    } else {
-      removeItem("sessionId");
-      setChannelId("");
-      ws?.close();
-    }
-    setIsSessionStart((v) => !v);
   };
 
   return (
-    <div className="w-full mx-auto p-4">
-      <div className="flex justify-end mb-4 gap-2">
-        <Button onClick={onSubmitCode}>
-          {questionData?.submit_info.id != 0 ? "Resubmit Code" : "Submit Code"}
-        </Button>
-        {(userData?.role == "ADMIN" ||
-          userData?.uid == questionData?.owner.id) && (
-          <>
-            <Link href={`/dashboard/problems/${problemId}/edit`}>
-              <Button>Edit Problem</Button>
-            </Link>
-            <Button variant="outline" onClick={onFillAnswer}>
-              Fill Answer
-            </Button>
-          </>
-        )}
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto">
-        {/* left component */}
-        <div className="border rounded-lg p-4">
-          <div className="flex justify-between mb-4">
-            <Button>Python (3.10)</Button>
-            <Button variant="outline" onClick={onFillStartCode}>
-              Reset Code
-            </Button>
-          </div>
-          <CodeEditor
-            value={code}
-            onChange={(newCode) => onChangeCode(newCode)}
-          />
-          <div className="border rounded-lg p-4 mt-3">
-            <div className="flex gap-3 items-center">
-              <Switch
-                id="isSessionStart"
-                checked={isSessionStart}
-                onCheckedChange={() =>
-                  handleSwitchSession(
-                    code,
-                    questionData?.title ?? "",
-                    questionData?.description ?? "",
-                    stdin
-                  )
-                }
-              />
-              <div>
-                <div className="text-md">Code with friend</div>
-                <div className="text-sm text-gray-500">
-                  Anyone with the link can edit this code
-                </div>
+    <form ref={formRef}>
+      <ResizableLayout
+        direction="horizontal"
+        first={
+          <div>
+            <div className="bg-[hsl(var(--editor-background))] h-[45px] flex items-end justify-between">
+              <div className="bg-[hsl(var(--code-background))] h-[40px] w-fit px-4 py-2 rounded-t-md text-sm font-bold flex justify-center items-center">
+                {questionData?.title}
               </div>
             </div>
-            {isSessionStart && (
-              <div className="flex gap-2 items-center mt-3">
-                <Input
-                  disabled
-                  className="flex-grow"
-                  value={
-                    window.location.host + "/code-with-friend/" + channelId
-                  }
-                />
-                <Button onClick={handleCopy}>Copy Link</Button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* right component */}
-        <div className="border rounded-lg p-4">
-          <div className="flex justify-between mb-4">
-            <div className="flex gap-2 flex-wrap">
-              <Button
-                variant={activeTab === "detail" ? "default" : "outline"}
-                onClick={() => setActiveTab("detail")}
-              >
-                Detail
-              </Button>
-              <Button
-                variant={activeTab === "customInput" ? "default" : "outline"}
-                onClick={() => setActiveTab("customInput")}
-              >
-                Custom Input
-              </Button>
-              <Button
-                variant={activeTab === "testCase" ? "default" : "outline"}
-                onClick={() => setActiveTab("testCase")}
-              >
-                Test Case
-              </Button>
-              {questionData?.submit_info.id != 0 && (
-                <Button
-                  variant={activeTab === "yourSubmit" ? "default" : "outline"}
-                  onClick={() => setActiveTab("yourSubmit")}
-                >
-                  Your Submit
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {activeTab === "detail" && (
             <MarkdownComponent
               editable={false}
               preview="preview"
-              content={questionData?.description ?? ""}
+              content={`${questionData?.description ?? ""}`}
+              height="calc(100vh - 64px - 45px)"
+              hideToolbar
             />
-          )}
-
-          {activeTab === "customInput" && (
-            <>
-              <label htmlFor="input" className="block text-md font-medium my-4">
-                Input
-              </label>
-              <textarea
-                id="input"
-                className="w-full border rounded-md p-2 h-48 md:h-60 overflow-y-scroll resize-none"
-                value={stdin}
-                onChange={(e) => setStdin(e.target.value)}
-              />
-              <div className="flex justify-end mt-4">
-                <Button onClick={handleRun} disabled={loading}>
-                  {loading ? "Running..." : "Run"}
-                </Button>
+          </div>
+        }
+        second={
+          <ResizableLayout
+            direction="vertical"
+            initialSize={500}
+            onResize={setEditorHeight}
+            first={
+              <div>
+                <div className="bg-[hsl(var(--editor-background))] h-[45px] flex items-end justify-between">
+                  <div className="bg-[hsl(var(--code-background))] h-[40px] w-fit px-4 py-2 rounded-t-md text-sm font-bold flex justify-center items-center">
+                    main.py
+                  </div>
+                  <div className="h-[45px] flex justify-center items-center mr-2">
+                    <Button
+                      className="h-[30px]"
+                      onClick={onSubmit}
+                      disabled={submiting}
+                      type="button"
+                    >
+                      {submiting ? (
+                        <>pending submit..</>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          submit
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+                {questionData && (
+                  <CodeEditor
+                    id="formCode"
+                    className="h-full"
+                    height={`calc(${editorHeight}px - 45px)`}
+                    defaultValue={
+                      questionData?.submit_info?.code
+                        ? questionData.submit_info?.code.replace(/\\n/g, "\n")
+                        : questionData.start_code?.replace(/\\n/g, "\n")
+                    }
+                  />
+                )}
               </div>
-              <div className="mt-4">
-                <label
-                  htmlFor="output"
-                  className="block text-md font-medium mb-4"
-                >
-                  Output
-                </label>
-                <pre
-                  id="output"
-                  className="w-full border rounded-md p-2 h-48 md:h-60 overflow-y-auto whitespace-pre-wrap"
-                >
-                  {loading ? (
-                    <div className="flex justify-center items-center space-x-2">
-                      <div className="w-4 h-4 border-4 border-t-transparent border-blue-500 border-solid rounded-full animate-spin"></div>
-                      <span>Loading...</span>
-                    </div>
-                  ) : (
-                    stdout
+            }
+            second={
+              <div>
+                <div className="bg-[hsl(var(--editor-background))] h-[45px] flex items-end justify-between">
+                  <div className="flex">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("output")}
+                      className={`h-[40px] w-fit px-4 py-2 rounded-t-md text-sm font-bold flex justify-center items-center ${
+                        activeTab === "output"
+                          ? "bg-[hsl(var(--code-background))]"
+                          : ""
+                      }`}
+                    >
+                      output
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("input")}
+                      className={`h-[40px] w-fit px-4 py-2 rounded-t-md text-sm font-bold flex justify-center items-center ${
+                        activeTab === "input"
+                          ? "bg-[hsl(var(--code-background))]"
+                          : ""
+                      }`}
+                    >
+                      input
+                    </button>
+                    {questionData?.submitted && (
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("submit")}
+                        className={`h-[40px] w-fit px-4 py-2 rounded-t-md text-sm font-bold flex justify-center items-center ${
+                          activeTab === "submit"
+                            ? "bg-[hsl(var(--code-background))]"
+                            : ""
+                        }`}
+                      >
+                        submit
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="h-[45px] flex justify-center items-center mr-2 gap-2">
+                    <Button
+                      className="h-[30px]"
+                      onClick={runTests}
+                      disabled={codeRuning}
+                      type="button"
+                    >
+                      <LucideBeaker className="w-4 h-4" />
+                      run tests
+                    </Button>
+                    <Button
+                      className="h-[30px]"
+                      onClick={handleRun}
+                      disabled={codeRuning}
+                      type="button"
+                    >
+                      <Play className="w-4 h-4" />
+                      run
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  {(activeTab === "output" || activeTab === "submit") && (
+                    <pre
+                      id="output"
+                      className="w-full border-t-2 p-2 overflow-y-auto whitespace-pre-wrap text-sm border-none bg-[hsl(var(--code-background))]"
+                      style={{
+                        height: `calc(100vh - ${editorHeight}px - 64px - 45px)`,
+                      }}
+                    >
+                      {codeRuning ? (
+                        <div className="flex justify-center items-center space-x-2">
+                          <div className="w-4 h-4 border-4 border-t-transparent border-blue-500 border-solid rounded-full animate-spin"></div>
+                          <span>Loading...</span>
+                        </div>
+                      ) : activeTab === "output" ? (
+                        stdout
+                      ) : (
+                        questionData?.submit_info.info
+                      )}
+                    </pre>
                   )}
-                </pre>
-              </div>
-            </>
-          )}
-
-          {activeTab === "testCase" && (
-            <>
-              <div className="max-h-[550px] h-[550px] overflow-y-scroll">
-                {testCase.map((value, index) => {
-                  return (
-                    <TestCaseComponent
-                      key={index}
-                      test_name={`Case ${index + 1}`}
-                      expected={value.expected}
-                      output={value.output}
-                      loading={loading}
-                    />
-                  );
-                })}
-              </div>
-              <div className="flex justify-end mt-4">
-                <Button onClick={handleRunAllTestCase} disabled={loading}>
-                  {loading ? "Running..." : "Run All Test"}
-                </Button>
-              </div>
-            </>
-          )}
-
-          {activeTab === "yourSubmit" &&
-            questionData?.submit_info.status != "PENDING" && (
-              <>
-                <div
-                  className={`text-xl mb-3 ${
-                    questionData?.submit_info.score ==
-                    questionData?.submit_info.max_score
-                      ? "text-green-600"
-                      : "text-red-600"
-                  }`}
-                >
-                  Score: {questionData?.submit_info.score}/
-                  {questionData?.submit_info.max_score} (
-                  {(
-                    ((questionData?.submit_info.score ?? 0) /
-                      (questionData?.submit_info.max_score ?? 1)) *
-                    100
-                  ).toFixed(2)}
-                  %)
+                  <CodeEditor
+                    className={`h-full ${
+                      activeTab === "input" ? "block" : "hidden"
+                    }`}
+                    height={`calc(100vh - ${editorHeight}px - 64px - 45px)`}
+                    defaultValue={questionData?.test_cases[0]?.input ?? ""}
+                    id="formStdin"
+                  />
                 </div>
-                <div className="max-h-[550px] h-[550px] overflow-y-scroll">
-                  {/* {questionData?.submit_info.info.map((value, index) => {
-                    return (
-                      <TestCaseComponent
-                        key={index}
-                        test_name={`Case ${index + 1}`}
-                        forceCorrect={value.score == 1}
-                        showOnlyOutput={true}
-                        expected={{
-                          expected: "hidden expected",
-                          expected_run_time_ms: value.expected_run_time_ms,
-                          id: value.test_case_id,
-                          input: "hidden input",
-                        }}
-                        output={{
-                          output: value.description,
-                          run_time_ms: value.output.runtime,
-                        }}
-                        loading={false}
-                      />
-                    );
-                  })} */}
-                </div>
-                <div className="flex justify-end mt-4">
-                  <Button
-                    onClick={() => {
-                      onChangeCode(questionData?.submit_info.code ?? "");
-                    }}
-                    variant="outline"
-                  >
-                    Your Submit Code
-                  </Button>
-                </div>
-              </>
-            )}
-
-          {activeTab === "yourSubmit" &&
-            questionData?.submit_info.status === "PENDING" && (
-              <div className="flex justify-center items-center text-2xl gap-2 pt-4">
-                <span>Your submission is pending review.</span>
-                <RefreshCw className="animate-spin" size={24} />
               </div>
-            )}
-        </div>
-      </div>
-    </div>
+            }
+          />
+        }
+      />
+    </form>
   );
 }

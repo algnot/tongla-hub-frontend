@@ -113,7 +113,7 @@ export function DataTable<T>({
       window.location.href = `${href}`;
       return;
     }
-    window.location.href = `${href}${(data[navigateKey] ?? "") as string}`;
+    window.location.href = href.replaceAll("{}",(data[navigateKey] ?? "") as string );
   };
   const columnNames =
     columns ||
