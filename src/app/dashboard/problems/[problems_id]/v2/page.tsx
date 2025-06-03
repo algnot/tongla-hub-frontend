@@ -225,9 +225,9 @@ export default function Page({ params }: PageProps) {
                     className="h-full"
                     height={`calc(${editorHeight}px - 45px)`}
                     defaultValue={
-                      questionData?.submitted == 1
-                        ? questionData.submit_info.code.replace(/\\n/g, "\n")
-                        : questionData.start_code.replace(/\\n/g, "\n")
+                      questionData?.submit_info?.code
+                        ? questionData.submit_info?.code.replace(/\\n/g, "\n")
+                        : questionData.start_code?.replace(/\\n/g, "\n")
                     }
                   />
                 )}
